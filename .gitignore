@@ -6,6 +6,7 @@ Desktop.ini
 # Python:
 *.so
 *.egg
+*.pyc
 *.egg-info
 dist
 build
