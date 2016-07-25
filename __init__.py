@@ -4,7 +4,7 @@ from wtforms import Form, BooleanField, TextField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from MySQLdb import escape_string as thwart
 import gc
-import datetime
+import datetime, time
 from functools import wraps
 import json
 import os
@@ -17,6 +17,18 @@ TOPIC_DICT = Content()
 
 app = Flask(__name__, instance_path = '/var/www/h3cblog/protected_dir')
 app.secret_key = "asfd345treghstrg"
+
+#record the time when user logging in
+def login_write_file():
+	datenow = datetime.datetime.utcnow()
+	path = '/var/www/h3cblog/static/' + 'user_accessed_log_' +  datenow + '.txt'
+	# timestr = time.strftime("%Y%m%d-%H:%M:%S", time.localtime(stat.st_mtime))
+	timestr = time.strftime("%Y%m%d%H%M%S", datenow)
+	data = request.remote_addr + timestr
+	with open(path, 'a') as file:
+		file.write(data + '\n')
+	
+	return
 
 #check if user has logged in
 def login_required(f):
@@ -56,7 +68,25 @@ def about_team():
 
 @app.route("/comments/")
 def comments():
-	return  render_template("comments.html", title=u'留言板')
+	try:
+		error = ''
+		c, conn = connection()
+		
+		timestr1 = time.strftime("%Y%m%d", time.localtime())
+		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_log_' +  timestr1 + '.log'
+		timestr2 = time.strftime("%Y%m%d-%H:%M:%S%p", time.localtime())
+
+		with open(path, 'a') as file:
+			if 'logged_in' in session:
+				c.execute("select * from users where username = (%s)", [session['username']])
+				#get the user_type of first record
+				username_db = c.fetchone()[1] 
+				data1 = timestr2 + ': user \"' + username_db + '\" (IP:' + request.remote_addr + ') logged on'
+				file.write(data1 + '\n') 
+
+		return  render_template("comments.html", title=u'留言板', error = error)
+	except Exception as e:
+		return str(e)
 	
 
 @app.route("/privacy/")
@@ -81,7 +111,7 @@ def role_error_page():
 		return str(e)
 	
 	
-#Server docs viewing	
+#Server docs viewing
 @app.route("/server-dashboard/")
 @login_required
 def server_dashboard():	
@@ -179,6 +209,7 @@ def login_page():
 				session['username'] = request.form['username']
 				
 				flash("You are now logged in!")
+				
 
 				#redirect to the exact url I want to access
 				return redirect(session["want_url"])
