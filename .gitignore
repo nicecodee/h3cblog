@@ -14,5 +14,6 @@ build
 # My configurations:
 *.pdf
 *.doc
+*.log
 *.png
 *.jpg

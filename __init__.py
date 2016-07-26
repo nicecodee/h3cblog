@@ -18,17 +18,82 @@ TOPIC_DICT = Content()
 app = Flask(__name__, instance_path = '/var/www/h3cblog/protected_dir')
 app.secret_key = "asfd345treghstrg"
 
-#record the time when user logging in
-def login_write_file():
-	datenow = datetime.datetime.utcnow()
-	path = '/var/www/h3cblog/static/' + 'user_accessed_log_' +  datenow + '.txt'
-	# timestr = time.strftime("%Y%m%d-%H:%M:%S", time.localtime(stat.st_mtime))
-	timestr = time.strftime("%Y%m%d%H%M%S", datenow)
-	data = request.remote_addr + timestr
-	with open(path, 'a') as file:
-		file.write(data + '\n')
-	
-	return
+#get the location from user's ip
+def get_ip_info(ip):
+	import requests
+	ip_info = ''
+	#淘宝IP地址库接口
+	r = requests.get('http://ip.taobao.com/service/getIpInfo.php?ip=%s' %ip)
+	if  r.json()['code'] == 0 :
+		i = r.json()['data']
+
+		country = i['country']  #国家
+		# area = i['area']        #区域
+		region = i['region']    #地区
+		city = i['city']        #城市
+		isp = i['isp']          #运营商
+		
+		ip_info = country + ' ' + region + ' ' + city + ' ' + isp
+		
+	return ip_info
+
+
+
+#do the logging when a user logs in
+def user_enter_log():
+	try:
+		c, conn = connection()
+		
+		timestr_filename = time.strftime("%Y%m%d", time.localtime())
+		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
+		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S %p", time.localtime())
+
+		with open(path, 'a') as file:
+			if 'logged_in' in session:
+				c.execute("select * from users where username = (%s)", [session['username']])
+				
+				ip_addr = request.remote_addr
+				ip_loc = get_ip_info(ip_addr)
+				ip_loc = ip_loc.encode('gbk')  #先解决中文乱码问题
+				
+				
+				#get the user_type of first record
+				username_db = c.fetchone()[1] 
+				data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ' ' + ip_loc + ') logs on'
+				# data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ') logs on'
+				file.write(data + '\n') 
+
+	except Exception as e:
+		return str(e)
+		
+		
+#do the logging when a user exits
+def user_exit_log():
+	try:
+		c, conn = connection()
+		
+		timestr_filename = time.strftime("%Y%m%d", time.localtime())
+		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
+		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S %p", time.localtime())
+
+		with open(path, 'a') as file:
+			if 'logged_in' in session:
+				c.execute("select * from users where username = (%s)", [session['username']])
+				
+				ip_addr = request.remote_addr
+				ip_loc = get_ip_info(ip_addr)
+				ip_loc = ip_loc.encode('gbk')  #先解决中文乱码问题
+				
+				
+				#get the user_type of first record
+				username_db = c.fetchone()[1] 
+				data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ' ' + ip_loc + ') exits'
+				# data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ') logged on'
+				file.write(data + '\n') 
+
+	except Exception as e:
+		return str(e)		
+
 
 #check if user has logged in
 def login_required(f):
@@ -70,19 +135,7 @@ def about_team():
 def comments():
 	try:
 		error = ''
-		c, conn = connection()
-		
-		timestr1 = time.strftime("%Y%m%d", time.localtime())
-		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_log_' +  timestr1 + '.log'
-		timestr2 = time.strftime("%Y%m%d-%H:%M:%S%p", time.localtime())
-
-		with open(path, 'a') as file:
-			if 'logged_in' in session:
-				c.execute("select * from users where username = (%s)", [session['username']])
-				#get the user_type of first record
-				username_db = c.fetchone()[1] 
-				data1 = timestr2 + ': user \"' + username_db + '\" (IP:' + request.remote_addr + ') logged on'
-				file.write(data1 + '\n') 
+		# user_enter_log()
 
 		return  render_template("comments.html", title=u'留言板', error = error)
 	except Exception as e:
@@ -102,9 +155,9 @@ def role_error_page():
 		#Be carefule!! Must use [] to quote session['username'] , otherwise it will
 		#prompt a warning like: "not all arguments converted during string formatting"
 		c.execute("select * from users where username = (%s)", [session['username']])
-		
 		#get the user_type of first record
-		user_type_db = c.fetchone()[5]
+		user_type_db = c.fetchone()[5] 
+
 		
 		return  render_template("role-error.html", title=u'权限错误', user_type_db=user_type_db)	
 	except Exception as e:
@@ -184,6 +237,7 @@ def page_not_found(e):
 @app.route("/logout/")
 @login_required
 def login():
+	user_exit_log()
 	session.clear()
 	flash("You have been logged out!")
 	gc.collect()
@@ -208,6 +262,7 @@ def login_page():
 				session['logged_in'] = True
 				session['username'] = request.form['username']
 				
+				user_enter_log()
 				flash("You are now logged in!")
 				
 
