@@ -8,6 +8,7 @@ import datetime, time
 from functools import wraps
 import json
 import os
+import requests
 
 from content_mgmt import Content
 from dbconnect import connection
@@ -20,7 +21,7 @@ app.secret_key = "asfd345treghstrg"
 
 #get the location from user's ip
 def get_ip_info(ip):
-	import requests
+	
 	ip_info = ''
 	#淘宝IP地址库接口
 	r = requests.get('http://ip.taobao.com/service/getIpInfo.php?ip=%s' %ip)
