@@ -95,6 +95,33 @@ def user_exit_log():
 	except Exception as e:
 		return str(e)		
 
+#do the logging when a user registers
+def user_register_log():
+	try:
+		c, conn = connection()
+		
+		timestr_filename = time.strftime("%Y%m%d", time.localtime())
+		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
+		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S %p", time.localtime())
+
+		with open(path, 'a') as file:
+			if 'logged_in' in session:
+				c.execute("select * from users where username = (%s)", [session['username']])
+				
+				ip_addr = request.remote_addr
+				ip_loc = get_ip_info(ip_addr)
+				ip_loc = ip_loc.encode('gbk')  #先解决中文乱码问题
+				
+				
+				#get the user_type of first record
+				username_db = c.fetchone()[1] 
+				data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ' ' + ip_loc + ') registers and logs on'
+				# data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ') logs on'
+				file.write(data + '\n') 
+
+	except Exception as e:
+		return str(e)		
+		
 
 #check if user has logged in
 def login_required(f):
@@ -238,7 +265,8 @@ def page_not_found(e):
 @app.route("/logout/")
 @login_required
 def login():
-	user_exit_log()
+	user_exit_log() #do the logging
+	
 	session.clear()
 	flash("You have been logged out!")
 	gc.collect()
@@ -263,7 +291,7 @@ def login_page():
 				session['logged_in'] = True
 				session['username'] = request.form['username']
 				
-				user_enter_log()
+				user_enter_log()  #do the logging
 				flash("You are now logged in!")
 				
 
@@ -321,6 +349,8 @@ def register_page():
 				
 				session['logged_in'] = True
 				session['username'] = username
+				
+				user_register_log() #do the logging
 				
 				return redirect(url_for('homepage'))
 		
