@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 {% block head %}
-    <meta charset="utf-8">
 	
 	<!-- Scripts for tree view and dropdown-menu(These must be loaded first!!) -->
 <!-- 	<link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
@@ -53,7 +52,7 @@
 			<!-- Collect the nav links, forms, and other content for toggling -->
 			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 			  <ul class="nav navbar-nav">
-				<li class="active"><a href="/">首页 <span class="sr-only">(current)</span></a></li>
+				<li><a href="/">首页 <span class="sr-only">(current)</span></a></li>
 				<li><a href="/about-team/">团队介绍</a></li>
 				<li><a href="/comments/">留言板</a></li>
 				<li class="dropdown">
@@ -75,6 +74,15 @@
 			  </form> -->
 			  <ul class="nav navbar-nav navbar-right">
 				{% if session.logged_in %}
+					{% if session.username == 'xuan' %}
+						<li class="dropdown">
+						  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">系统管理<span class="caret"></span></a>
+						  <ul class="dropdown-menu">
+							<li><a href="/users-list/">用户管理</a></li>
+							<li><a href="/logs-list/">日志列表</a></li>
+						  </ul>
+						</li>
+					{% endif %}
 					<li><a href="#"><span class="glyphicon glyphicon-user"></span> {{session.username}}</a></li>
 					<li><a href="/logout/"><span class="glyphicon glyphicon-log-out"></span> 退出 </a></li>
 				{% else %}

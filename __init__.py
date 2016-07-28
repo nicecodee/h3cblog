@@ -9,6 +9,8 @@ from functools import wraps
 import json
 import os
 import requests
+import sys 
+
 
 from content_mgmt import Content
 from dbconnect import connection
@@ -28,13 +30,13 @@ def get_ip_info(ip):
 	if  r.json()['code'] == 0 :
 		i = r.json()['data']
 
-		country = i['country']  #国家
+		country = i['country']  #国家 
 		# area = i['area']        #区域
 		region = i['region']    #地区
 		city = i['city']        #城市
 		isp = i['isp']          #运营商
 		
-		ip_info = country + ' ' + region + ' ' + city + ' ' + isp
+		ip_info = country + '/' + region + '/' + city + '/' + isp
 		
 	return ip_info
 
@@ -47,21 +49,20 @@ def user_enter_log():
 		
 		timestr_filename = time.strftime("%Y%m%d", time.localtime())
 		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
-		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S %p", time.localtime())
+		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S-%p", time.localtime())
 
-		with open(path, 'a') as file:
+		with open(path, 'ab') as file:
 			if 'logged_in' in session:
 				c.execute("select * from users where username = (%s)", [session['username']])
 				
 				ip_addr = request.remote_addr
 				ip_loc = get_ip_info(ip_addr)
-				ip_loc = ip_loc.encode('gbk')  #先解决中文乱码问题
+				ip_loc = ip_loc.encode('utf-8')  #先解决中文乱码问题
 				
 				
 				#get the user_type of first record
 				username_db = c.fetchone()[1] 
-				data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ' ' + ip_loc + ') logs on'
-				# data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ') logs on'
+				data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 登入'
 				file.write(data + '\n') 
 
 	except Exception as e:
@@ -75,21 +76,20 @@ def user_exit_log():
 		
 		timestr_filename = time.strftime("%Y%m%d", time.localtime())
 		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
-		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S %p", time.localtime())
+		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S-%p", time.localtime())
 
-		with open(path, 'a') as file:
+		with open(path, 'ab') as file:
 			if 'logged_in' in session:
 				c.execute("select * from users where username = (%s)", [session['username']])
 				
 				ip_addr = request.remote_addr
 				ip_loc = get_ip_info(ip_addr)
-				ip_loc = ip_loc.encode('gbk')  #先解决中文乱码问题
+				ip_loc = ip_loc.encode('utf-8')  #先解决中文乱码问题
 				
 				
 				#get the user_type of first record
 				username_db = c.fetchone()[1] 
-				data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ' ' + ip_loc + ') exits'
-				# data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ') logged on'
+				data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 退出'
 				file.write(data + '\n') 
 
 	except Exception as e:
@@ -102,21 +102,20 @@ def user_register_log():
 		
 		timestr_filename = time.strftime("%Y%m%d", time.localtime())
 		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
-		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S %p", time.localtime())
+		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S-%p", time.localtime())
 
-		with open(path, 'a') as file:
+		with open(path, 'ab') as file:
 			if 'logged_in' in session:
 				c.execute("select * from users where username = (%s)", [session['username']])
 				
 				ip_addr = request.remote_addr
 				ip_loc = get_ip_info(ip_addr)
-				ip_loc = ip_loc.encode('gbk')  #先解决中文乱码问题
+				ip_loc = ip_loc.encode('utf-8')  #先解决中文乱码问题
 				
 				
 				#get the user_type of first record
 				username_db = c.fetchone()[1] 
-				data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ' ' + ip_loc + ') registers and logs on'
-				# data = timestr_logon + ': user \"' + username_db + '\" (IP:' + ip_addr + ') logs on'
+				data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 注册并登陆'
 				file.write(data + '\n') 
 
 	except Exception as e:
@@ -159,6 +158,65 @@ def about_team():
 	return  render_template("about-team.html", title=u'团队介绍')
 	
 
+@app.route("/sys-admin/")
+def sys_admin():
+	return  render_template("sys-admin.html", title=u'系统管理')
+	
+	
+@app.route("/users-list/")
+def users_list():
+	try:
+		c, conn = connection()
+
+		#get all users
+		c.execute("select `username`, `user_type`, `email`, `regdate`  from users")
+		users_db = c.fetchall()
+		
+		return render_template("users-list.html", title=u'用户列表', users_db=users_db)	
+	except Exception as e:
+		return str(e)
+
+
+@app.route("/logs-list/")
+def logs_list():
+	list = []
+	path = '/var/www/h3cblog/protected_dir/logs/'
+	for logfile in os.listdir(path):
+		list.append(logfile)
+	return  render_template("logs-list.html", title=u'日志列表', list=list)			
+		
+		
+@app.route('/show-log/<filename>/')
+@app.route("/show-log/") 
+def show_log(filename):
+	try:
+	
+		list = []
+		path = '/var/www/h3cblog/protected_dir/logs/'
+		for logfile in os.listdir(path):
+			list.append(logfile)
+			
+		fn = filename
+		
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
+		
+		path = '/var/www/h3cblog/protected_dir/logs/' + fn
+		with open(path, 'r') as file:
+			event_lines = file.readlines()
+
+		data = []
+		num = len(event_lines)
+
+		for x in range(num):
+			data.append(event_lines[x].split(" "))
+		
+		return  render_template("show-log.html", title=u'系统日志', num=num, data=data, list=list, fn=fn)
+		
+	except Exception as e: 
+		return str(e)
+	
+	
 @app.route("/comments/")
 def comments():
 	try:
@@ -174,7 +232,9 @@ def comments():
 def privacy():
 	return  render_template("privacy.html", title=u'网站规定和隐私协议')
 	
+	
 
+	
 @app.route("/role-error/")
 def role_error_page():
 	try:
@@ -205,7 +265,7 @@ def server_dashboard():
 	user_type_db = c.fetchone()[5]
 	
 	#check user_type of the logged in user, if not matches, redirect to role_error_page
-	if 's' == user_type_db or 'a' == user_type_db:
+	if 'ser' == user_type_db or 'adm' == user_type_db:
 		return  render_template("server-dashboard.html", title=u'服务器岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
 		return redirect(url_for('role_error_page'))	
@@ -230,7 +290,7 @@ def network_dashboard():
 	user_type_db = c.fetchone()[5]
 	
 	#check if user_type matches
-	if 'n' == user_type_db or 'a' == user_type_db:
+	if 'net' == user_type_db or 'adm' == user_type_db:
 		return  render_template("network-dashboard.html", title=u'网络岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
 		return redirect(url_for('role_error_page'))	
@@ -250,7 +310,7 @@ def inventory_dashboard():
 	user_type_db = c.fetchone()[5]
 	
 	#check if user_type matches
-	if 'i' == user_type_db or 'a' == user_type_db:
+	if 'inv' == user_type_db or 'adm' == user_type_db:
 		return  render_template("inventory-dashboard.html", title=u'资产岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
 		return redirect(url_for('role_error_page'))	
@@ -277,6 +337,9 @@ def login():
 def login_page():
 	error = ''
 	try:
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
+		
 		c, conn = connection()
 		if request.method == "POST":
 			#Be carefule!! Must use [] to quote thwart(request.form['username']), otherwise it will
@@ -322,6 +385,8 @@ class RegistrationForm(Form):
 @app.route("/register/", methods = ['GET','POST'])
 def register_page():
 	try:
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
 		form = RegistrationForm(request.form)
 		
 		if request.method == "POST" and form.validate():
@@ -329,7 +394,7 @@ def register_page():
 			password = sha256_crypt.encrypt((str(form.password.data))) 
 			email = form.email.data
 			c, conn = connection()
-			
+
 			x = c.execute("select * from users where username = (%s)", [thwart(username)])
 			
 			if int(x) > 0:

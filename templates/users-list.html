@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block left_panel %}
+
+	{% include 'users-admin-left-panel.html' %}
+	
+{% endblock %}
+	
+{% block right_panel %}
+	
+
+	<div class="leaderboard">
+
+	<table class="table table-hover">
+	   <caption><h1>用户信息表</h1></caption>
+	   <thead>
+		  <tr>
+				<th>用户名(username)</th>
+				<th>用户类型(user_type)</th>
+				<th>用户邮箱(email)</th>
+				<th>注册日期(regdate)</th>
+		  </tr>
+	   </thead>
+	   <tbody>
+			{% for user in users_db %}
+			  <tr class="active">
+				 <td><a href="#">{{ user.0 }}</a></td>
+				 <td>{{ user.1 }}</td>
+				 <td>{{ user.2 }}</td>
+				 <td>{{ user.3 }}</td>
+			  </tr>
+			{% endfor %}
+	   </tbody>
+	</table>
+  </div>
+  
+  
+  <hr>
+  <footer>
+	<p>&copy; H3C-Tencent 2016</p>
+  </footer>
+{% endblock %}
