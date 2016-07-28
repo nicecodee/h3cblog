@@ -2,30 +2,31 @@
 
 {% block left_panel %}
 
-<!-- tree view -->
-
-<div class="panel-group" id="accordion">
-   <div class="panel panel-default">
-	  <div class="panel-heading">
-		 <h4 class="panel-title">
-			<a data-toggle="collapse" data-parent="#accordion" 
-			   href="#collapseOne">日志列表
-			</a>
-		 </h4>
-	  </div>
-	  <div id="collapseOne" class="panel-collapse collapse in">
-		 <div class="panel-body">
-			<ul>
-			{% for item in list %}
-				<li><a href="{{ url_for('show_log', filename=item) }}">{{item}}</a></li>
-			{% endfor %}
-			</ul>
-		 </div>
-	  </div>
-   </div>
-</div>
-<script type="text/javascript">
-   $(function () { $('#collapseOne').collapse('show')});
-</script>
+	<!-- tree view -->
+	<p><a class="btn btn-success" href="/sys-admin/">返回“系统管理”</a></p>
+	
+	<div class="panel-group" id="accordion">
+	   <div class="panel panel-info">
+		  <div class="panel-heading">
+			 <h4 class="panel-title">
+				<a data-toggle="collapse" data-parent="#accordion" 
+				   href="#collapseOne">日志列表
+				</a>
+			 </h4>
+		  </div>
+		  <div id="collapseOne" class="panel-collapse collapse in">
+			 <div class="panel-body">
+				<ul>
+				{% for item in list %}
+					<li><a href="{{ url_for('show_log', filename=item) }}">{{item}}</a></li>
+				{% endfor %}
+				</ul>
+			 </div>
+		  </div>
+	   </div>
+	</div>
+	<script type="text/javascript">
+	   $(function () { $('#collapseOne').collapse('show')});
+	</script>
 	
 {% endblock %} <!--block left_panel-->

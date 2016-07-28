@@ -75,13 +75,7 @@
 			  <ul class="nav navbar-nav navbar-right">
 				{% if session.logged_in %}
 					{% if session.username == 'xuan' %}
-						<li class="dropdown">
-						  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">系统管理<span class="caret"></span></a>
-						  <ul class="dropdown-menu">
-							<li><a href="/users-list/">用户管理</a></li>
-							<li><a href="/logs-list/">日志列表</a></li>
-						  </ul>
-						</li>
+						<li><a href="/sys-admin/"><span class="glyphicon glyphicon-cog"></span>系统管理</a></li>
 					{% endif %}
 					<li><a href="#"><span class="glyphicon glyphicon-user"></span> {{session.username}}</a></li>
 					<li><a href="/logout/"><span class="glyphicon glyphicon-log-out"></span> 退出 </a></li>
