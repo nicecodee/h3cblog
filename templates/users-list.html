@@ -9,34 +9,32 @@
 {% block right_panel %}
 	
 
-	<div class="leaderboard">
+<div class="leaderboard">
+	<caption><h1>用户列表</h1></caption>
+	
+	<div style="position:absolute; width:65%; height:450px; overflow-y:auto">
+		<table class="table table-hover">
 
-	<table class="table table-hover">
-	   <caption><h1>用户信息表</h1></caption>
-	   <thead>
-		  <tr>
-				<th>用户名(username)</th>
-				<th>用户类型(user_type)</th>
-				<th>用户邮箱(email)</th>
-				<th>注册日期(regdate)</th>
-		  </tr>
-	   </thead>
-	   <tbody>
-			{% for user in users_db %}
-			  <tr class="active">
-				 <td><a href="#">{{ user.0 }}</a></td>
-				 <td>{{ user.1 }}</td>
-				 <td>{{ user.2 }}</td>
-				 <td>{{ user.3 }}</td>
+		   <thead>
+			  <tr>
+					<th>用户名(username)</th>
+					<th>用户类型(user_type)</th>
+					<th>用户邮箱(email)</th>
+					<th>注册日期(regdate)</th>
 			  </tr>
-			{% endfor %}
-	   </tbody>
-	</table>
-  </div>
+		   </thead>
+		   <tbody>
+				{% for user in users_db %}
+				  <tr class="active">
+					 <td>{{ user.0 }}</td>
+					 <td><font size="3" face="arial" color="green"> {{ user.1 }}&nbsp;&nbsp;&nbsp;&nbsp;</font><a href="{{ url_for('user_auth_edit', username=user.0) }}">修改</a></td>
+					 <td>{{ user.2 }}</td>
+					 <td>{{ user.3 }}</td>
+				  </tr>
+				{% endfor %}
+		   </tbody>
+		</table> 
+	</div>	
+</div>
   
-  
-  <hr>
-  <footer>
-	<p>&copy; H3C-Tencent 2016</p>
-  </footer>
 {% endblock %}

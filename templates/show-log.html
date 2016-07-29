@@ -34,33 +34,33 @@
 
 	{% block right_panel %}
 		
-	<div class="leaderboard">
-		<table class="table table-hover">
-		   <caption><h1>用户访问日志:</h1><h3>文件名：{{fn}}</h3></caption>
-		   <thead>
-			  <tr>
-				<th>日期时间</th>
-				<th>用户名</th>
-				<th>登陆IP</th>
-				<th>用户行为</th>
-			  </tr>
-		   </thead>
-		   <tbody>
-			{% for row in range(num) %}
-				<tr class="active">
-					{% for column in range(4) %}
-					<td> {{ data[row][column] }} </td>
-					{% endfor %}
-				</tr>
-			{% endfor %}
-		   </tbody>
-		</table>
+	<div class="leaderboard" style="width:70%;">
+		<caption><h1>{{fn}}</h1></caption>
+		
+		<div style="position:absolute; width:65%; height:450px; overflow-y:auto">
+			<table class="table table-hover">
+			   <!-- <caption><h1>{{fn}}</h1></caption> -->
+			   <thead>
+				  <tr>
+					<th>日期时间</th>
+					<th>用户名</th>
+					<th>登陆IP</th>
+					<th>用户行为</th>
+				  </tr>
+			   </thead>
+			   <tbody>
+				{% for row in range(num) %}
+					<tr class="active">
+						{% for column in range(4) %}
+						<td> {{ data[row][column] }} </td>
+						{% endfor %}
+					</tr>
+				{% endfor %}
+			   </tbody>
+			</table>
+		</div>
 	</div>
 
 	
-	<footer>
-	<!-- <p class="pull-right"><strong><a href="#top">回到顶部</a></strong></p> -->
-		<p>&copy; H3C-Tencent 2016</p>
-	</footer>
   
 {% endblock %}<!--block right_panel

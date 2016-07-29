@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-
 from flask import Flask, render_template, flash, request, url_for, session, redirect, session, send_from_directory
-from wtforms import Form, BooleanField, TextField, PasswordField, validators, RadioField
-from wtforms.validators import DataRequired, Length
+from wtforms import Form, BooleanField, TextField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from MySQLdb import escape_string as thwart
 import gc
@@ -11,6 +10,8 @@ import json
 import os
 import requests
 import sys 
+
+
 from content_mgmt import Content
 from dbconnect import connection
 
@@ -36,11 +37,13 @@ def get_ip_info(ip):
 		isp = i['isp']          #运营商
 		
 		ip_info = country + '/' + region + '/' + city + '/' + isp
+		
 	return ip_info
 
 
+
 #do the logging when a user logs in
-def write_log_info(info_type):
+def user_enter_log():
 	try:
 		c, conn = connection()
 		
@@ -56,33 +59,67 @@ def write_log_info(info_type):
 				ip_loc = get_ip_info(ip_addr)
 				ip_loc = ip_loc.encode('utf-8')  #先解决中文乱码问题
 				
+				
 				#get the user_type of first record
 				username_db = c.fetchone()[1] 
-				
-				#write logs according to the info_type
-				if 'login' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 登入'
-				elif 'register' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 注册并登入'
-				elif 'logout' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 退出'
-				elif 'server' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了服务器岗文档'
-				elif 'serverDenied' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问服务器岗文档被系统拒绝'
-				elif 'network' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了网络岗文档库'
-				elif 'networkDenied' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问网络岗文档岗被系统拒绝'
-				elif 'inventory' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了资产岗文档库'
-				elif 'inventoryDenied' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问资产岗文档库被系统拒绝'
-					
+				data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 登入'
 				file.write(data + '\n') 
 
 	except Exception as e:
 		return str(e)
+		
+		
+#do the logging when a user exits
+def user_exit_log():
+	try:
+		c, conn = connection()
+		
+		timestr_filename = time.strftime("%Y%m%d", time.localtime())
+		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
+		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S-%p", time.localtime())
+
+		with open(path, 'ab') as file:
+			if 'logged_in' in session:
+				c.execute("select * from users where username = (%s)", [session['username']])
+				
+				ip_addr = request.remote_addr
+				ip_loc = get_ip_info(ip_addr)
+				ip_loc = ip_loc.encode('utf-8')  #先解决中文乱码问题
+				
+				
+				#get the user_type of first record
+				username_db = c.fetchone()[1] 
+				data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 退出'
+				file.write(data + '\n') 
+
+	except Exception as e:
+		return str(e)		
+
+#do the logging when a user registers
+def user_register_log():
+	try:
+		c, conn = connection()
+		
+		timestr_filename = time.strftime("%Y%m%d", time.localtime())
+		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
+		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S-%p", time.localtime())
+
+		with open(path, 'ab') as file:
+			if 'logged_in' in session:
+				c.execute("select * from users where username = (%s)", [session['username']])
+				
+				ip_addr = request.remote_addr
+				ip_loc = get_ip_info(ip_addr)
+				ip_loc = ip_loc.encode('utf-8')  #先解决中文乱码问题
+				
+				
+				#get the user_type of first record
+				username_db = c.fetchone()[1] 
+				data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 注册并登陆'
+				file.write(data + '\n') 
+
+	except Exception as e:
+		return str(e)		
 		
 
 #check if user has logged in
@@ -126,39 +163,6 @@ def sys_admin():
 	return  render_template("sys-admin.html", title=u'系统管理')
 	
 	
-@app.route('/user-auth-edit/<username>/', methods = ['GET','POST'])
-def user_auth_edit(username):
-	error = ''
-	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
-		
-		username=username
-		c, conn = connection()
-		if request.method == "POST":
-			permit = request.values.get("user_auth")
-		
-			#Be carefule!! Must use [] to quote username , otherwise it will
-			#prompt a warning like: "not all arguments converted during string formatting"
-			c.execute("update users set user_type='%s' where username='%s'" % (permit,username) )
-			conn.commit()
-			
-			c.close()
-			conn.close()
-			gc.collect()
-			flash('user authorization updated successfully!')
-			return  redirect(url_for('users_list'))
-		else:
-			c, conn = connection()
-			c.execute("select * from users where username = (%s)", [username])
-			user_type_db = c.fetchone()[5] 
-			return render_template("user-auth-edit.html", title=u'用户权限', user_type_db=user_type_db,username=username, error=error)
-	
-	except Exception as e:
-		return str(e)
-
-			
-		
 @app.route("/users-list/")
 def users_list():
 	try:
@@ -262,10 +266,8 @@ def server_dashboard():
 	
 	#check user_type of the logged in user, if not matches, redirect to role_error_page
 	if 'ser' == user_type_db or 'adm' == user_type_db:
-		write_log_info('server')
 		return  render_template("server-dashboard.html", title=u'服务器岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
-		write_log_info('serverDenied')
 		return redirect(url_for('role_error_page'))	
 
 
@@ -289,10 +291,8 @@ def network_dashboard():
 	
 	#check if user_type matches
 	if 'net' == user_type_db or 'adm' == user_type_db:
-		write_log_info('network')
 		return  render_template("network-dashboard.html", title=u'网络岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
-		write_log_info('networkDenied')
 		return redirect(url_for('role_error_page'))	
 	
 
@@ -311,10 +311,8 @@ def inventory_dashboard():
 	
 	#check if user_type matches
 	if 'inv' == user_type_db or 'adm' == user_type_db:
-		write_log_info('inventory')
 		return  render_template("inventory-dashboard.html", title=u'资产岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
-		write_log_info('inventoryDenied')
 		return redirect(url_for('role_error_page'))	
 		
 	
@@ -326,8 +324,8 @@ def page_not_found(e):
 	
 @app.route("/logout/")
 @login_required
-def logout():
-	write_log_info('logout') #do the logging
+def login():
+	user_exit_log() #do the logging
 	
 	session.clear()
 	flash("You have been logged out!")
@@ -356,7 +354,7 @@ def login_page():
 				session['logged_in'] = True
 				session['username'] = request.form['username']
 				
-				write_log_info('login')  #do the logging
+				user_enter_log()  #do the logging
 				flash("You are now logged in!")
 				
 
@@ -383,8 +381,7 @@ class RegistrationForm(Form):
 				validators.EqualTo('confirm', message=u'密码不匹配')])	
 	confirm = PasswordField(u'重输一遍密码')
 	accept_tos = BooleanField(u'我接受<a href="/privacy/">网站规定和隐私协议</a> (最后更新：2016年7月)', [validators.Required()])
-	
-	
+		
 @app.route("/register/", methods = ['GET','POST'])
 def register_page():
 	try:
@@ -418,7 +415,7 @@ def register_page():
 				session['logged_in'] = True
 				session['username'] = username
 				
-				write_log_info('register') #do the logging
+				user_register_log() #do the logging
 				
 				return redirect(url_for('homepage'))
 		

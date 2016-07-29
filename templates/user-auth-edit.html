@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block left_panel %}
+
+	{% include 'sys-admin-left-panel.html' %}
+	
+{% endblock %}
+	
+{% block right_panel %}
+	
+<div class="leaderboard">
+	<caption><h1>用户权限</h1></caption>
+	<br>
+	<h4>"{{username}}" 当前权限:  <font size="4" face="arial" color="blue"> {{user_type_db}} </font></h4>   
+	<hr>
+	<h3>修改权限:</h3>
+	<br>
+	<form class="form-horizontal" method ="POST" action="{{ url_for('user_auth_edit', username=username) }}">
+		<div>
+		   <label class="checkbox-inline">
+			  <input type="radio" name="user_auth" value="nul" checked> 无访问权限(nul)
+		   </label>
+		   <label class="checkbox-inline">
+			  <input type="radio" name="user_auth" value="ser"> 服务器岗(ser)
+		   </label>
+		   <label class="checkbox-inline">
+			  <input type="radio" name="user_auth" value="net"> 网络岗(net)
+		   </label>
+		   <label class="checkbox-inline">
+			  <input type="radio" name="user_auth" value="inv"> 资产岗(inv)
+		   </label>
+		   <label class="checkbox-inline">
+			  <input type="radio" name="user_auth" value="adm"> 管理员(adm)
+		   </label>
+		</div>
+		
+		<hr>
+	    <div>
+		 <button type="submit" class="btn btn-success">提交</button>
+		 <a href="{{ url_for('users_list') }}" class="btn btn-default" role="button">取消</a>
+	    </div>
+	</form>
+	<p>{{error}}</p>
+</div>
+   
+  
+{% endblock %}
