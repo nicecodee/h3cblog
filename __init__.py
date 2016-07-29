@@ -13,12 +13,13 @@ import requests
 import sys 
 from content_mgmt import Content
 from dbconnect import connection
+from config import SECRET_KEY, instance_path, LOGS_PATH
 
 TOPIC_DICT = Content()
 
 
-app = Flask(__name__, instance_path = '/var/www/h3cblog/protected_dir')
-app.secret_key = "asfd345treghstrg"
+app = Flask(__name__, instance_path)
+app.secret_key=SECRET_KEY
 
 #get the location from user's ip
 def get_ip_info(ip):
@@ -45,7 +46,7 @@ def write_log_info(info_type):
 		c, conn = connection()
 		
 		timestr_filename = time.strftime("%Y%m%d", time.localtime())
-		path = '/var/www/h3cblog/protected_dir/logs/' + 'user_accessed_' +  timestr_filename + '.log'
+		path = LOGS_PATH + 'user_accessed_' +  timestr_filename + '.log'
 		timestr_logon = time.strftime("%Y/%m/%d-%H:%M:%S-%p", time.localtime())
 
 		with open(path, 'ab') as file:
@@ -69,11 +70,11 @@ def write_log_info(info_type):
 				elif 'server' == info_type:
 					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了服务器岗文档'
 				elif 'serverDenied' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问服务器岗文档被系统拒绝'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问服务器岗文档库被系统拒绝'
 				elif 'network' == info_type:
 					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了网络岗文档库'
 				elif 'networkDenied' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问网络岗文档岗被系统拒绝'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问网络岗文档库被系统拒绝'
 				elif 'inventory' == info_type:
 					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了资产岗文档库'
 				elif 'inventoryDenied' == info_type:
@@ -176,8 +177,7 @@ def users_list():
 @app.route("/logs-list/")
 def logs_list():
 	list = []
-	path = '/var/www/h3cblog/protected_dir/logs/'
-	for logfile in os.listdir(path):
+	for logfile in os.listdir(LOGS_PATH):
 		list.append(logfile)
 	return  render_template("logs-list.html", title=u'日志列表', list=list)			
 		
@@ -188,8 +188,7 @@ def show_log(filename):
 	try:
 	
 		list = []
-		path = '/var/www/h3cblog/protected_dir/logs/'
-		for logfile in os.listdir(path):
+		for logfile in os.listdir(LOGS_PATH):
 			list.append(logfile)
 			
 		fn = filename
@@ -197,7 +196,7 @@ def show_log(filename):
 		reload(sys)
 		sys.setdefaultencoding('utf-8')
 		
-		path = '/var/www/h3cblog/protected_dir/logs/' + fn
+		path = LOGS_PATH + fn
 		with open(path, 'r') as file:
 			event_lines = file.readlines()
 
