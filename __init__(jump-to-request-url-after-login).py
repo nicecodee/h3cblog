@@ -94,7 +94,7 @@ def login_required(f):
 			return f(*args, **kwargs)
 		else:
 			#record the url I want to access
-			# session["want_url"] = request.url
+			session["want_url"] = request.url
 			
 			flash("You need to login first")
 			return redirect(url_for('login_page'))			
@@ -403,10 +403,9 @@ def login_page():
 				write_log_info('login')  #do the logging
 				flash("You are now logged in!")
 				
+
 				#redirect to the exact url I want to access
-				# return redirect(session["want_url"])
-				
-				return redirect(url_for('homepage'))
+				return redirect(session["want_url"])
 
 				
 			else:
