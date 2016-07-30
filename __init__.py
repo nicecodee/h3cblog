@@ -133,11 +133,11 @@ def sys_admin():
 	auth_type_db = c.fetchone()[5]
 	
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
-	if 'sysadm' == auth_type_db:
+	if 'superadm' == auth_type_db:
 		write_log_info('server')
 		return  render_template("sys-admin.html", title=u'系统管理')
 	else:
-		write_log_info('sysadmDenied')
+		write_log_info('superadmDenied')
 		return redirect(url_for('role_error_page'))	
 
 
@@ -168,7 +168,7 @@ def user_auth_edit(username):
 			c, conn = connection()
 			c.execute("select * from users where username = (%s)", [username])
 			auth_type_db = c.fetchone()[5] 
-			return render_template("user-auth-edit.html", title=u'用户权限', auth_type_db=auth_type_db,username=username, error=error)
+			return render_template("user-auth-edit.html", title=u'修改权限', auth_type_db=auth_type_db,username=username, error=error)
 	
 	except Exception as e:
 		return str(e)
@@ -247,7 +247,7 @@ def show_log(filename):
 		for x in range(num):
 			data.append(event_lines[x].split(" "))
 		
-		return  render_template("show-log.html", title=u'系统日志', num=num, data=data, list=list, fn=fn)
+		return  render_template("show-log.html", title=u'查看日志', num=num, data=data, list=list, fn=fn)
 		
 	except Exception as e: 
 		return str(e)
@@ -301,7 +301,7 @@ def server_dashboard():
 	auth_type_db = c.fetchone()[5]
 	
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
-	if 'ser' == auth_type_db or 'adm' == auth_type_db or 'sysadm' == auth_type_db:
+	if 'ser' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
 		write_log_info('server')
 		return  render_template("server-dashboard.html", title=u'服务器岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
@@ -328,7 +328,7 @@ def network_dashboard():
 	auth_type_db = c.fetchone()[5]
 	
 	#check if auth_type matches
-	if 'net' == auth_type_db or 'adm' == auth_type_db or 'sysadm' == auth_type_db:
+	if 'net' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
 		write_log_info('network')
 		return  render_template("network-dashboard.html", title=u'网络岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
@@ -350,7 +350,7 @@ def inventory_dashboard():
 	auth_type_db = c.fetchone()[5]
 	
 	#check if auth_type matches
-	if 'inv' == auth_type_db or 'adm' == auth_type_db or 'sysadm' == auth_type_db:
+	if 'inv' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
 		write_log_info('inventory')
 		return  render_template("inventory-dashboard.html", title=u'资产岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
