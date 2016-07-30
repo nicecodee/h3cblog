@@ -18,23 +18,42 @@
 		   <thead>
 			  <tr>
 					<th>用户名(username)</th>
-					<th>用户类型(user_type)</th>
+					<th>权限类型(auth_type)</th>
 					<th>用户邮箱(email)</th>
 					<th>注册日期(regdate)</th>
 			  </tr>
-		   </thead>
+		   </thead> 
 		   <tbody>
 				{% for user in users_db %}
-				  <tr class="active">
-					 <td>{{ user.0 }}</td>
-					 <td><font size="3" face="arial" color="green"> {{ user.1 }}&nbsp;&nbsp;&nbsp;&nbsp;</font><a href="{{ url_for('user_auth_edit', username=user.0) }}">修改</a></td>
+				  <tr class="active">    
+					 <td><a href="{{ url_for('user_delete', username=user.0) }}" onclick="return myConfirm(this.href)"><button type="button" class="btn btn-danger" aria-label="right Align"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green">{{ user.0 }}</font></td> 	 
+					
+					 <td><a href="{{ url_for('user_auth_edit', username=user.0) }}"><button type="button" class="btn btn-default" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+					 </button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green"> {{ user.1 }}</font></td>
+					 
 					 <td>{{ user.2 }}</td>
 					 <td>{{ user.3 }}</td>
 				  </tr>
+
 				{% endfor %}
 		   </tbody>
 		</table> 
 	</div>	
+	
 </div>
-  
+
+   <!-- bootbox 插件（Modal） -->
+  <script>
+    bootbox.setDefaults("locale","zh_CN");  
+	myConfirm = function(url) {
+		bootbox.confirm("确定删除该用户?（此操作不可撤回！）", function(okay) {
+			if(okay)
+				 location.href = url;
+		});
+		return false;
+	}
+   </script>
+   <!-- bootbox 插件（Modal） -->
+
+
 {% endblock %}

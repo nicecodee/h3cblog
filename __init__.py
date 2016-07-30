@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-from flask import Flask, render_template, flash, request, url_for, session, redirect, session, send_from_directory
+from flask import Flask, render_template, flash, request, url_for, session,redirect, session, send_from_directory
 from wtforms import Form, BooleanField, TextField, PasswordField, validators, RadioField
 from wtforms.validators import DataRequired, Length
 from passlib.hash import sha256_crypt
@@ -57,7 +57,7 @@ def write_log_info(info_type):
 				ip_loc = get_ip_info(ip_addr)
 				ip_loc = ip_loc.encode('utf-8')  #先解决中文乱码问题
 				
-				#get the user_type of first record
+				#get the auth_type of first record
 				username_db = c.fetchone()[1] 
 				
 				#write logs according to the info_type
@@ -124,8 +124,23 @@ def about_team():
 
 @app.route("/sys-admin/")
 def sys_admin():
-	return  render_template("sys-admin.html", title=u'系统管理')
+	c, conn = connection()
+	#Be carefule!! Must use [] to quote session['username'] , otherwise it will
+	#prompt a warning like: "not all arguments converted during string formatting"
+	c.execute("select * from users where username = (%s)", [session['username']])
 	
+	#get the auth_type of first record
+	auth_type_db = c.fetchone()[5]
+	
+	#check auth_type of the logged in user, if not matches, redirect to role_error_page
+	if 'sysadm' == auth_type_db:
+		write_log_info('server')
+		return  render_template("sys-admin.html", title=u'系统管理')
+	else:
+		write_log_info('sysadmDenied')
+		return redirect(url_for('role_error_page'))	
+
+
 	
 @app.route('/user-auth-edit/<username>/', methods = ['GET','POST'])
 def user_auth_edit(username):
@@ -141,7 +156,7 @@ def user_auth_edit(username):
 		
 			#Be carefule!! Must use [] to quote username , otherwise it will
 			#prompt a warning like: "not all arguments converted during string formatting"
-			c.execute("update users set user_type='%s' where username='%s'" % (permit,username) )
+			c.execute("update users set auth_type='%s' where username='%s'" % (permit,username) )
 			conn.commit()
 			
 			c.close()
@@ -152,13 +167,39 @@ def user_auth_edit(username):
 		else:
 			c, conn = connection()
 			c.execute("select * from users where username = (%s)", [username])
-			user_type_db = c.fetchone()[5] 
-			return render_template("user-auth-edit.html", title=u'用户权限', user_type_db=user_type_db,username=username, error=error)
+			auth_type_db = c.fetchone()[5] 
+			return render_template("user-auth-edit.html", title=u'用户权限', auth_type_db=auth_type_db,username=username, error=error)
 	
 	except Exception as e:
 		return str(e)
 
-			
+		
+@app.route('/user-delete/<username>/')
+@app.route('/user-delete/')
+def user_delete(username):
+	try:
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
+		
+		username=username
+		c, conn = connection()
+
+		#Be carefule!! Must use [] to quote username , otherwise it will
+		#prompt a warning like: "not all arguments converted during string formatting"
+		# c.execute("delete from users where username='%s'" % (username) )
+		c.execute("delete from users where username= (%s)", [username] )
+		conn.commit()
+		
+		c.close()
+		conn.close()
+		gc.collect()
+		flash('user deleted successfully!')
+		return  redirect(url_for('users_list'))
+	
+	except Exception as e:
+		return str(e)		
+
+	
 		
 @app.route("/users-list/")
 def users_list():
@@ -166,7 +207,7 @@ def users_list():
 		c, conn = connection()
 
 		#get all users
-		c.execute("select `username`, `user_type`, `email`, `regdate`  from users")
+		c.execute("select `username`, `auth_type`, `email`, `regdate`  from users")
 		users_db = c.fetchall()
 		
 		return render_template("users-list.html", title=u'用户列表', users_db=users_db)	
@@ -233,16 +274,16 @@ def privacy():
 @app.route("/role-error/")
 def role_error_page():
 	try:
-		user_type_db = ''
+		auth_type_db = ''
 		c, conn = connection()
 		#Be carefule!! Must use [] to quote session['username'] , otherwise it will
 		#prompt a warning like: "not all arguments converted during string formatting"
 		c.execute("select * from users where username = (%s)", [session['username']])
-		#get the user_type of first record
-		user_type_db = c.fetchone()[5] 
+		#get the auth_type of first record
+		auth_type_db = c.fetchone()[5] 
 
 		
-		return  render_template("role-error.html", title=u'权限错误', user_type_db=user_type_db)	
+		return  render_template("role-error.html", title=u'权限错误', auth_type_db=auth_type_db)	
 	except Exception as e:
 		return str(e)
 	
@@ -256,11 +297,11 @@ def server_dashboard():
 	#prompt a warning like: "not all arguments converted during string formatting"
 	c.execute("select * from users where username = (%s)", [session['username']])
 	
-	#get the user_type of first record
-	user_type_db = c.fetchone()[5]
+	#get the auth_type of first record
+	auth_type_db = c.fetchone()[5]
 	
-	#check user_type of the logged in user, if not matches, redirect to role_error_page
-	if 'ser' == user_type_db or 'adm' == user_type_db:
+	#check auth_type of the logged in user, if not matches, redirect to role_error_page
+	if 'ser' == auth_type_db or 'adm' == auth_type_db or 'sysadm' == auth_type_db:
 		write_log_info('server')
 		return  render_template("server-dashboard.html", title=u'服务器岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
@@ -283,11 +324,11 @@ def network_dashboard():
 	#prompt a warning like: "not all arguments converted during string formatting"
 	c.execute("select * from users where username = (%s)", [session['username']])
 	
-	#get the user_type of first record
-	user_type_db = c.fetchone()[5]
+	#get the auth_type of first record
+	auth_type_db = c.fetchone()[5]
 	
-	#check if user_type matches
-	if 'net' == user_type_db or 'adm' == user_type_db:
+	#check if auth_type matches
+	if 'net' == auth_type_db or 'adm' == auth_type_db or 'sysadm' == auth_type_db:
 		write_log_info('network')
 		return  render_template("network-dashboard.html", title=u'网络岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
@@ -305,11 +346,11 @@ def inventory_dashboard():
 	#prompt a warning like: "not all arguments converted during string formatting"
 	c.execute("select * from users where username = (%s)", [session['username']])
 	
-	#get the user_type of first record
-	user_type_db = c.fetchone()[5]
+	#get the auth_type of first record
+	auth_type_db = c.fetchone()[5]
 	
-	#check if user_type matches
-	if 'inv' == user_type_db or 'adm' == user_type_db:
+	#check if auth_type matches
+	if 'inv' == auth_type_db or 'adm' == auth_type_db or 'sysadm' == auth_type_db:
 		write_log_info('inventory')
 		return  render_template("inventory-dashboard.html", title=u'资产岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:

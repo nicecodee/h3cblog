@@ -11,14 +11,14 @@
 <div class="leaderboard">
 	<caption><h1>用户权限</h1></caption>
 	<br>
-	<h4>"{{username}}" 当前权限:  <font size="4" face="arial" color="blue"> {{user_type_db}} </font></h4>   
+	<h4>"{{username}}" 当前权限:  <font size="4" face="arial" color="blue"> {{auth_type_db}} </font></h4>   
 	<hr>
 	<h3>修改权限:</h3>
 	<br>
 	<form class="form-horizontal" method ="POST" action="{{ url_for('user_auth_edit', username=username) }}">
 		<div>
 		   <label class="checkbox-inline">
-			  <input type="radio" name="user_auth" value="nul" checked> 无访问权限(nul)
+			  <input type="radio" name="user_auth" value="None" checked> 无访问权限(None/Null)
 		   </label>
 		   <label class="checkbox-inline">
 			  <input type="radio" name="user_auth" value="ser"> 服务器岗(ser)
@@ -31,6 +31,9 @@
 		   </label>
 		   <label class="checkbox-inline">
 			  <input type="radio" name="user_auth" value="adm"> 管理员(adm)
+		   </label>
+		   <label class="checkbox-inline">
+			  <input type="radio" name="user_auth" value="sysadm"> 超级管理员(sysadm)
 		   </label>
 		</div>
 		
