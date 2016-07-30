@@ -390,11 +390,13 @@ def login_page():
 			
 			#get the password of first record
 			pwd_in_db = c.fetchone()[2]
+			auth_type_db = c.fetchone()[5]
 			
 			#check if password matches
 			if sha256_crypt.verify(request.form['password'], pwd_in_db):
 				session['logged_in'] = True
 				session['username'] = request.form['username']
+				session['auth_type_db'] = auth_type_db
 				
 				write_log_info('login')  #do the logging
 				flash("You are now logged in!")
@@ -439,6 +441,7 @@ def register_page():
 			c, conn = connection()
 
 			x = c.execute("select * from users where username = (%s)", [thwart(username)])
+			auth_type_db = c.fetchone()[5]
 			
 			if int(x) > 0:
 				flash("username taken! Try another one!")
@@ -457,6 +460,7 @@ def register_page():
 				
 				session['logged_in'] = True
 				session['username'] = username
+				session['auth_type_db'] = auth_type_db
 				
 				write_log_info('register') #do the logging
 				

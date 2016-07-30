@@ -73,7 +73,9 @@
 			  </form> -->
 			  <ul class="nav navbar-nav navbar-right">
 				{% if session.logged_in %}
-					<li><a href="/sys-admin/"><span class="glyphicon glyphicon-cog"></span>系统管理</a></li>
+					{% if session.auth_type_db == 'sysadm' %}
+						<li><a href="/sys-admin/"><span class="glyphicon glyphicon-cog"></span>系统管理</a></li>
+					{% endif %}
 					<li><a href="#"><span class="glyphicon glyphicon-user"></span> {{session.username}}</a></li>
 					<li><a href="/logout/"><span class="glyphicon glyphicon-log-out"></span> 退出 </a></li>
 				{% else %}
