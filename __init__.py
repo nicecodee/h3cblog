@@ -11,9 +11,10 @@ import json
 import os
 import requests
 import sys 
+import shutil
 from content_mgmt import Content
 from dbconnect import connection
-from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH
+from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH, DOCS_PATH
 
 TOPIC_DICT = Content()
 
@@ -42,6 +43,29 @@ def get_ip_info(ip):
 	return ip_info
 
 
+#calculate the number of logs/users/docs for 'sya-admim' badges displaying
+def sysadm_badges_number():
+	try:
+		#Get number of logs and display it with "bootstrap badge"
+		loglist = []
+		for logfile in os.listdir(LOGS_PATH):
+			loglist.append(logfile)
+		num_logs = len(loglist)
+		
+		#Get number of users and display it with "bootstrap badge"
+		c, conn = connection()
+		c.execute("SELECT * from users;")
+		num_users = int(c.rowcount)
+		
+		#Get number of docs and display it with "bootstrap badge"
+		num_docs = sum([len(files) for root,dirs,files in os.walk(DOCS_PATH)])
+		
+		return(num_logs, num_users, num_docs)
+	except Exception as e:
+		return str(e)
+	
+	
+	
 #do the logging when a user logs in
 def write_log_info(info_type):
 	try:
@@ -123,7 +147,8 @@ def homepage():
 def about_team():
 	return  render_template("about-team.html", title=u'团队介绍')
 	
-
+	
+	
 @app.route("/sys-admin/")
 def sys_admin():
 	c, conn = connection()
@@ -138,18 +163,12 @@ def sys_admin():
 	if 'superadm' == auth_type_db:
 		write_log_info('server')
 		
-		#Get number of logs and display it with "bootstrap badge"
-		list = []
-		for logfile in os.listdir(LOGS_PATH):
-			list.append(logfile)
-		num_logs = len(list)
+		#Get number of logs/users/docs and display them with "bootstrap badge"
+		num_logs = (sysadm_badges_number())[0]
+		num_users = (sysadm_badges_number())[1]
+		num_docs = (sysadm_badges_number())[2]
 		
-		#Get number of users and display it with "bootstrap badge"
-		c, conn = connection()
-		c.execute("SELECT * from users;")
-		num_users = int(c.rowcount)
-		
-		return  render_template("sys-admin.html", title=u'系统管理', num_logs=num_logs, num_users=num_users)
+		return  render_template("sys-admin.html", title=u'系统管理', num_logs=num_logs, num_users=num_users, num_docs=num_docs)
 	else:
 		write_log_info('superadmDenied')
 		return redirect(url_for('role_error_page'))	
@@ -183,19 +202,13 @@ def user_auth_edit(username):
 			c.execute("select * from users where username = (%s)", [username])
 			auth_type_db = c.fetchone()[5] 
 			
-			#Get number of logs and display it with "bootstrap badge"
-			list = []
-			for logfile in os.listdir(LOGS_PATH):
-				list.append(logfile)
-			num_logs = len(list)
-			
-			#Get number of users and display it with "bootstrap badge"
-			c, conn = connection()
-			c.execute("SELECT * from users;")
-			num_users = int(c.rowcount)
+			#Get number of logs/users/docs and display them with "bootstrap badge"
+			num_logs = (sysadm_badges_number())[0]
+			num_users = (sysadm_badges_number())[1]
+			num_docs = (sysadm_badges_number())[2]
 			
 			return render_template("user-auth-edit.html", title=u'修改权限', auth_type_db=auth_type_db,username=username,
-			num_logs=num_logs, num_users=num_users, error=error)
+			num_logs=num_logs, num_users=num_users, num_docs=num_docs, error=error)
 	
 	except Exception as e:
 		return str(e)
@@ -237,20 +250,12 @@ def users_list():
 		c.execute("select `username`, `auth_type`, `email`, `regdate`  from users")
 		users_db = c.fetchall()
 		
-		
-		#Get number of logs and display it with "bootstrap badge"
-		list = []
-		for logfile in os.listdir(LOGS_PATH):
-			list.append(logfile)
-		num_logs = len(list)
-		
-		#Get number of users and display it with "bootstrap badge"
-		c, conn = connection()
-		c.execute("SELECT * from users;")
-		num_users = int(c.rowcount)
+		#Get number of logs/users/docs and display them with "bootstrap badge"
+		num_logs = (sysadm_badges_number())[0]
+		num_users = (sysadm_badges_number())[1]
+		num_docs = (sysadm_badges_number())[2]
 			
-		
-		return render_template("users-list.html", title=u'用户列表', users_db=users_db, num_logs=num_logs, num_users=num_users)	
+		return render_template("users-list.html", title=u'用户列表', users_db=users_db, num_logs=num_logs, num_users=num_users, num_docs=num_docs)	
 	except Exception as e:
 		return str(e)
 
@@ -363,7 +368,102 @@ def docs_dashboard():
 	num_inventory = len(inventory_list)
 	
 	return  render_template("docs-dashboard.html", title=u'文档库', num_server=num_server, num_network=num_network, num_inventory=num_inventory)	
+
+
+@app.route('/doc-type-edit/<filename>/', methods = ['GET','POST'])
+def doc_type_edit(filename):
+	error = ''
+	try:
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
+		
+		old_doc_type = ''
 	
+		if request.method == "POST":
+			new_doc_type = request.values.get("doc_type")
+			#find the path by the filename
+			for root, dirs, files in os.walk(DOCS_PATH):
+				for file in files:
+					if file == filename:
+						old_path_file = "%s/%s" % (root,file)
+						old_doc_type = (os.path.split(root))[1]
+						break   #if we found it, exit the loop
+						
+			new_path_file = DOCS_PATH + new_doc_type + '/' + filename
+			#copy the old_path_file to new_path_file of new type
+			shutil.copy(old_path_file, new_path_file) 
+			#remove the old_path_file
+			os.remove(old_path_file)
+		
+			flash('doc type updated successfully!')
+			return  redirect(url_for('docs_list'))
+		else:
+			filename = filename
+			#find the old_doc_type
+			for root, dirs, files in os.walk(DOCS_PATH):
+				for file in files:
+					if file == filename:
+						old_doc_type = (os.path.split(root))[1]
+						
+			#Get number of logs/users/docs and display them with "bootstrap badge"
+			num_logs = (sysadm_badges_number())[0]
+			num_users = (sysadm_badges_number())[1]
+			num_docs = (sysadm_badges_number())[2]
+			return render_template("doc-type-edit.html", title=u'修改类型', filename=filename, old_doc_type=old_doc_type, 
+			num_logs=num_logs, num_users=num_users, num_docs=num_docs,error=error)
+
+	
+	except Exception as e:
+		return str(e)	
+	
+	
+
+@app.route('/doc-delete/<filename>/')
+@app.route('/doc-delete/')
+def doc_delete(filename):
+	try:
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
+		
+		#find the path by the filename
+		for root, dirs, files in os.walk(DOCS_PATH):
+			for file in files:
+				if file == filename:
+					filename = "%s/%s" % (root,file)
+					break   #if we found it, exit the loop
+		#delete the file
+		os.remove(filename)
+
+		flash('doc deleted successfully!')
+		return  redirect(url_for('docs_list'))
+	
+	except Exception as e:
+		return str(e)	
+
+	
+@app.route("/docs-list/")
+def docs_list():
+	try:
+		fnlist = []
+		dirlist = []
+		for root,dirs,files in os.walk(DOCS_PATH):
+			for i in files:	
+				fnlist.append(i)
+				# dirlist.append(root)
+				dirlist.append((os.path.split(root))[1])
+				
+		num_file = len(fnlist)
+		
+		#Get number of logs/users/docs and display them with "bootstrap badge"
+		num_logs = (sysadm_badges_number())[0]
+		num_users = (sysadm_badges_number())[1]
+		num_docs = (sysadm_badges_number())[2]
+			
+		return render_template("docs-list.html", title=u'文档列表', num_file=num_file, fnlist=fnlist, dirlist=dirlist, 
+		num_logs=num_logs, num_users=num_users, num_docs=num_docs)	
+	except Exception as e:
+		return str(e)
+
 	
 #Server docs viewing
 @app.route("/server-dashboard/")
