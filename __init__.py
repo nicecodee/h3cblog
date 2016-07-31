@@ -223,9 +223,9 @@ def logs_list():
 	return  render_template("logs-list.html", title=u'日志列表', list=list)			
 		
 		
-@app.route('/show-log/<filename>/')
-@app.route("/show-log/") 
-def show_log(filename):
+@app.route('/log-show/<filename>/')
+@app.route("/log-show/") 
+def log_show(filename):
 	try:
 	
 		list = []
@@ -247,7 +247,7 @@ def show_log(filename):
 		for x in range(num):
 			data.append(event_lines[x].split(" "))
 		
-		return  render_template("show-log.html", title=u'查看日志', num=num, data=data, list=list, fn=fn)
+		return  render_template("log-show.html", title=u'查看日志', num=num, data=data, list=list, fn=fn)
 		
 	except Exception as e: 
 		return str(e)
@@ -286,6 +286,12 @@ def role_error_page():
 		return  render_template("role-error.html", title=u'权限错误', auth_type_db=auth_type_db)	
 	except Exception as e:
 		return str(e)
+	
+#main docs viewing
+@app.route("/docs-dashboard/")
+@login_required
+def docs_dashboard():
+	return  render_template("docs-dashboard.html", title=u'文档库')	
 	
 	
 #Server docs viewing

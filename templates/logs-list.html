@@ -18,7 +18,7 @@
 			 <div class="panel-body">
 				<ul>
 				{% for item in list %}
-					<li><a href="{{ url_for('show_log', filename=item) }}">{{item}}</a></li>
+					<li><a href="{{ url_for('log_show', filename=item) }}">{{item}}</a></li>
 				{% endfor %}
 				</ul>
 			 </div>
