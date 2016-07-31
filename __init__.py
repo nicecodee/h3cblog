@@ -307,8 +307,8 @@ def server_dashboard():
 	auth_type_db = c.fetchone()[5]
 	
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
-	if 'ser' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
-		write_log_info('server')
+	# if 'ser' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
+		# write_log_info('server')
 		return  render_template("server-dashboard.html", title=u'服务器岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
 		write_log_info('serverDenied')
