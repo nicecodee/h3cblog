@@ -182,7 +182,20 @@ def user_auth_edit(username):
 			c, conn = connection()
 			c.execute("select * from users where username = (%s)", [username])
 			auth_type_db = c.fetchone()[5] 
-			return render_template("user-auth-edit.html", title=u'修改权限', auth_type_db=auth_type_db,username=username, error=error)
+			
+			#Get number of logs and display it with "bootstrap badge"
+			list = []
+			for logfile in os.listdir(LOGS_PATH):
+				list.append(logfile)
+			num_logs = len(list)
+			
+			#Get number of users and display it with "bootstrap badge"
+			c, conn = connection()
+			c.execute("SELECT * from users;")
+			num_users = int(c.rowcount)
+			
+			return render_template("user-auth-edit.html", title=u'修改权限', auth_type_db=auth_type_db,username=username,
+			num_logs=num_logs, num_users=num_users, error=error)
 	
 	except Exception as e:
 		return str(e)
