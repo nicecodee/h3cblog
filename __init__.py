@@ -480,12 +480,51 @@ def server_dashboard():
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
 	if 'ser' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
 		write_log_info('server')
-		return  render_template("server-dashboard.html", title=u'服务器岗文档库', TOPIC_DICT = TOPIC_DICT)
+		
+		
+		doclist = []
+		for docfile in os.listdir(SERVER_DOCS_PATH):
+			doclist.append(docfile)
+
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
+		
+		return  render_template("server-dashboard.html", title=u'服务器岗文档库', doclist = doclist)
 	else:
 		write_log_info('serverDenied')
 		return redirect(url_for('role_error_page'))	
 
+		
+@app.route("/doc-server-show/<filename>/")
+@app.route("/doc-server-show/")
+def doc_server_show(filename):
+	filename = filename
+	doclist = []
+	for docfile in os.listdir(SERVER_DOCS_PATH):
+		doclist.append(docfile)
+	return  render_template("doc-server-show.html", title=u'服务器岗文档', filename=filename, doclist=doclist)		
+		
 
+@app.route("/doc-network-show/<filename>/")
+@app.route("/doc-network-show/")
+def doc_network_show(filename):
+	filename = filename
+	doclist = []
+	for docfile in os.listdir(NETWORK_DOCS_PATH):
+		doclist.append(docfile)
+	return  render_template("doc-network-show.html", title=u'网络岗文档', filename=filename, doclist=doclist)	
+	
+
+@app.route("/doc-inventory-show/<filename>/")
+@app.route("/doc-inventory-show/")
+def doc_inventory_show(filename):
+	filename = filename
+	doclist = []
+	for docfile in os.listdir(INVENTORY_DOCS_PATH):
+		doclist.append(docfile)
+	return  render_template("doc-inventory-show.html", title=u'资产岗文档', filename=filename, doclist=doclist)
+
+	
 @app.route("/server-issue-handle/")
 @login_required
 def server_issue_handle():
@@ -507,7 +546,15 @@ def network_dashboard():
 	#check if auth_type matches
 	if 'net' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
 		write_log_info('network')
-		return  render_template("network-dashboard.html", title=u'网络岗文档库', TOPIC_DICT = TOPIC_DICT)
+
+		doclist = []
+		for docfile in os.listdir(NETWORK_DOCS_PATH):
+			doclist.append(docfile)
+
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
+		
+		return  render_template("network-dashboard.html", title=u'网络岗文档库', doclist = doclist)	
 	else:
 		write_log_info('networkDenied')
 		return redirect(url_for('role_error_page'))	
@@ -529,7 +576,15 @@ def inventory_dashboard():
 	#check if auth_type matches
 	if 'inv' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
 		write_log_info('inventory')
-		return  render_template("inventory-dashboard.html", title=u'资产岗文档库', TOPIC_DICT = TOPIC_DICT)
+		
+		doclist = []
+		for docfile in os.listdir(INVENTORY_DOCS_PATH):
+			doclist.append(docfile)
+
+		reload(sys)
+		sys.setdefaultencoding('utf-8')
+		
+		return  render_template("inventory-dashboard.html", title=u'资产岗文档库', doclist = doclist)			
 	else:
 		write_log_info('inventoryDenied')
 		return redirect(url_for('role_error_page'))	
