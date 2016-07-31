@@ -255,29 +255,12 @@ def users_list():
 		return str(e)
 
 
-@app.route('/log-delete/<filename>/')
-@app.route('/log-delete/')
-def log_delete(filename):
-	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
-		
-		filename = LOGS_PATH + filename
-		os.remove(filename)
-
-		flash('log deleted successfully!')
-		return  redirect(url_for('logs_list'))
-	
-	except Exception as e:
-		return str(e)		
-	
-	
 @app.route("/logs-list/")
 def logs_list():
 	list = []
 	for logfile in os.listdir(LOGS_PATH):
 		list.append(logfile)
-	return  render_template("logs-list.html", title=u'日志列表', list=list)	
+	return  render_template("logs-list.html", title=u'日志列表', list=list)			
 		
 		
 @app.route('/log-show/<filename>/')
