@@ -18,8 +18,10 @@ from config import SECRET_KEY, instance_path, LOGS_PATH
 TOPIC_DICT = Content()
 
 
-app = Flask(__name__, instance_path)
-app.secret_key=SECRET_KEY
+app = Flask(__name__)
+#when using config.py, ALWAYS remember to assign "SECRET_KEY" and "instance_path" to app!!!
+app.secret_key=SECRET_KEY         
+app.instance_path=instance_path
 
 #get the location from user's ip
 def get_ip_info(ip):
@@ -307,8 +309,8 @@ def server_dashboard():
 	auth_type_db = c.fetchone()[5]
 	
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
-	# if 'ser' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
-		# write_log_info('server')
+	if 'ser' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
+		write_log_info('server')
 		return  render_template("server-dashboard.html", title=u'服务器岗文档库', TOPIC_DICT = TOPIC_DICT)
 	else:
 		write_log_info('serverDenied')
