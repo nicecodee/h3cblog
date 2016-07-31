@@ -13,7 +13,7 @@ import requests
 import sys 
 from content_mgmt import Content
 from dbconnect import connection
-from config import SECRET_KEY, instance_path, LOGS_PATH
+from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH
 
 TOPIC_DICT = Content()
 
@@ -137,7 +137,19 @@ def sys_admin():
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
 	if 'superadm' == auth_type_db:
 		write_log_info('server')
-		return  render_template("sys-admin.html", title=u'系统管理')
+		
+		#Get number of logs and display it with "bootstrap badge"
+		list = []
+		for logfile in os.listdir(LOGS_PATH):
+			list.append(logfile)
+		num_logs = len(list)
+		
+		#Get number of users and display it with "bootstrap badge"
+		c, conn = connection()
+		c.execute("SELECT * from users;")
+		num_users = int(c.rowcount)
+		
+		return  render_template("sys-admin.html", title=u'系统管理', num_logs=num_logs, num_users=num_users)
 	else:
 		write_log_info('superadmDenied')
 		return redirect(url_for('role_error_page'))	
@@ -212,7 +224,20 @@ def users_list():
 		c.execute("select `username`, `auth_type`, `email`, `regdate`  from users")
 		users_db = c.fetchall()
 		
-		return render_template("users-list.html", title=u'用户列表', users_db=users_db)	
+		
+		#Get number of logs and display it with "bootstrap badge"
+		list = []
+		for logfile in os.listdir(LOGS_PATH):
+			list.append(logfile)
+		num_logs = len(list)
+		
+		#Get number of users and display it with "bootstrap badge"
+		c, conn = connection()
+		c.execute("SELECT * from users;")
+		num_users = int(c.rowcount)
+			
+		
+		return render_template("users-list.html", title=u'用户列表', users_db=users_db, num_logs=num_logs, num_users=num_users)	
 	except Exception as e:
 		return str(e)
 
@@ -293,7 +318,21 @@ def role_error_page():
 @app.route("/docs-dashboard/")
 @login_required
 def docs_dashboard():
-	return  render_template("docs-dashboard.html", title=u'文档库')	
+	#Get number of docs and display it with "bootstrap badge"
+	server_list = []
+	network_list = []
+	inventory_list = []
+	for server_file in os.listdir(SERVER_DOCS_PATH):
+		server_list.append(server_file)
+	for netowrk_file in os.listdir(NETWORK_DOCS_PATH):
+		network_list.append(netowrk_file)
+	for inventory_file in os.listdir(INVENTORY_DOCS_PATH):
+		inventory_list.append(inventory_file)
+	num_server = len(server_list)
+	num_network = len(network_list)
+	num_inventory = len(inventory_list)
+	
+	return  render_template("docs-dashboard.html", title=u'文档库', num_server=num_server, num_network=num_network, num_inventory=num_inventory)	
 	
 	
 #Server docs viewing
