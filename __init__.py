@@ -43,6 +43,12 @@ def get_ip_info(ip):
 	return ip_info
 
 
+#solve the chinese code problem
+def	set_cn_encoding():
+	reload(sys)
+	sys.setdefaultencoding('utf-8')
+
+	
 #calculate the number of logs/users/docs for 'sya-admim' badges displaying
 def sysadm_badges_number():
 	try:
@@ -174,13 +180,12 @@ def sys_admin():
 		return redirect(url_for('role_error_page'))	
 
 
-	
+
 @app.route('/user-auth-edit/<username>/', methods = ['GET','POST'])
 def user_auth_edit(username):
 	error = ''
 	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
+		set_cn_encoding()
 		
 		username=username
 		c, conn = connection()
@@ -218,8 +223,7 @@ def user_auth_edit(username):
 @app.route('/user-delete/')
 def user_delete(username):
 	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
+		set_cn_encoding()
 		
 		username=username
 		c, conn = connection()
@@ -264,8 +268,7 @@ def users_list():
 @app.route('/log-delete/')
 def log_delete(filename):
 	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
+		set_cn_encoding()
 		
 		filename = LOGS_PATH + filename
 		os.remove(filename)
@@ -289,15 +292,12 @@ def logs_list():
 @app.route("/log-show/") 
 def log_show(filename):
 	try:
-	
+		set_cn_encoding()
 		list = []
 		for logfile in os.listdir(LOGS_PATH):
 			list.append(logfile)
 			
 		fn = filename
-		
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
 		
 		path = LOGS_PATH + fn
 		with open(path, 'r') as file:
@@ -374,8 +374,7 @@ def docs_dashboard():
 def doc_type_edit(filename):
 	error = ''
 	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
+		set_cn_encoding()
 		
 		old_doc_type = ''
 	
@@ -422,8 +421,7 @@ def doc_type_edit(filename):
 @app.route('/doc-delete/')
 def doc_delete(filename):
 	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
+		set_cn_encoding()
 		
 		#find the path by the filename
 		for root, dirs, files in os.walk(DOCS_PATH):
@@ -444,6 +442,8 @@ def doc_delete(filename):
 @app.route("/docs-list/")
 def docs_list():
 	try:
+		set_cn_encoding()
+		
 		fnlist = []
 		dirlist = []
 		for root,dirs,files in os.walk(DOCS_PATH):
@@ -479,16 +479,14 @@ def server_dashboard():
 	
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
 	if 'ser' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
-		write_log_info('server')
+		set_cn_encoding()	
 		
+		write_log_info('server')
 		
 		doclist = []
 		for docfile in os.listdir(SERVER_DOCS_PATH):
 			doclist.append(docfile)
 
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
-		
 		return  render_template("server-dashboard.html", title=u'服务器岗文档库', doclist = doclist)
 	else:
 		write_log_info('serverDenied')
@@ -498,7 +496,10 @@ def server_dashboard():
 @app.route("/doc-server-show/<filename>/")
 @app.route("/doc-server-show/")
 def doc_server_show(filename):
+	set_cn_encoding()	
+	
 	filename = filename
+	
 	doclist = []
 	for docfile in os.listdir(SERVER_DOCS_PATH):
 		doclist.append(docfile)
@@ -508,7 +509,9 @@ def doc_server_show(filename):
 @app.route("/doc-network-show/<filename>/")
 @app.route("/doc-network-show/")
 def doc_network_show(filename):
+	set_cn_encoding()	
 	filename = filename
+
 	doclist = []
 	for docfile in os.listdir(NETWORK_DOCS_PATH):
 		doclist.append(docfile)
@@ -518,7 +521,10 @@ def doc_network_show(filename):
 @app.route("/doc-inventory-show/<filename>/")
 @app.route("/doc-inventory-show/")
 def doc_inventory_show(filename):
+	set_cn_encoding()	
+	
 	filename = filename
+	
 	doclist = []
 	for docfile in os.listdir(INVENTORY_DOCS_PATH):
 		doclist.append(docfile)
@@ -545,14 +551,13 @@ def network_dashboard():
 	
 	#check if auth_type matches
 	if 'net' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
+		set_cn_encoding()			
+		
 		write_log_info('network')
-
+		
 		doclist = []
 		for docfile in os.listdir(NETWORK_DOCS_PATH):
 			doclist.append(docfile)
-
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
 		
 		return  render_template("network-dashboard.html", title=u'网络岗文档库', doclist = doclist)	
 	else:
@@ -575,14 +580,13 @@ def inventory_dashboard():
 	
 	#check if auth_type matches
 	if 'inv' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
+		set_cn_encoding()			
+		
 		write_log_info('inventory')
 		
 		doclist = []
 		for docfile in os.listdir(INVENTORY_DOCS_PATH):
 			doclist.append(docfile)
-
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
 		
 		return  render_template("inventory-dashboard.html", title=u'资产岗文档库', doclist = doclist)			
 	else:
@@ -611,8 +615,7 @@ def logout():
 def login_page():
 	error = ''
 	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
+		set_cn_encoding()	
 		
 		c, conn = connection()
 		if request.method == "POST":
@@ -665,10 +668,9 @@ class RegistrationForm(Form):
 @app.route("/register/", methods = ['GET','POST'])
 def register_page():
 	try:
-		reload(sys)
-		sys.setdefaultencoding('utf-8')
-		form = RegistrationForm(request.form)
+		set_cn_encoding()	
 		
+		form = RegistrationForm(request.form)
 		if request.method == "POST" and form.validate():
 			username = form.username.data
 			password = sha256_crypt.encrypt((str(form.password.data))) 
