@@ -12,6 +12,7 @@ import os
 import requests
 import sys 
 import shutil
+import codecs
 from content_mgmt import Content
 from dbconnect import connection
 from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH, DOCS_PATH
@@ -87,30 +88,29 @@ def write_log_info(info_type):
 				
 				ip_addr = request.remote_addr
 				ip_loc = get_ip_info(ip_addr)
-				ip_loc = ip_loc.encode('utf-8')  #先解决中文乱码问题
 				
 				#get the auth_type of first record
 				username_db = c.fetchone()[1] 
 				
 				#write logs according to the info_type
 				if 'login' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 登入'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 登入'
 				elif 'register' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 注册并登入'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 注册并登入'
 				elif 'logout' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 退出'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 退出'
 				elif 'server' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了服务器岗文档'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 访问了服务器岗文档'
 				elif 'serverDenied' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问服务器岗文档库被系统拒绝'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 尝试访问服务器岗文档库被系统拒绝'
 				elif 'network' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了网络岗文档库'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 访问了网络岗文档库'
 				elif 'networkDenied' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问网络岗文档库被系统拒绝'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 尝试访问网络岗文档库被系统拒绝'
 				elif 'inventory' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 访问了资产岗文档库'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 访问了资产岗文档库'
 				elif 'inventoryDenied' == info_type:
-					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + ' 尝试访问资产岗文档库被系统拒绝'
+					data = timestr_logon + ' ' + username_db + ' ' + ip_addr + '-' + ip_loc + u' 尝试访问资产岗文档库被系统拒绝'
 					
 				file.write(data + '\n') 
 
@@ -167,6 +167,7 @@ def sys_admin():
 	
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
 	if 'superadm' == auth_type_db:
+		set_cn_encoding()
 		write_log_info('server')
 		
 		#Get number of logs/users/docs and display them with "bootstrap badge"
@@ -186,11 +187,10 @@ def user_auth_edit(username):
 	error = ''
 	try:
 		set_cn_encoding()
-		
-		username=username
+		username=username 
 		c, conn = connection()
 		if request.method == "POST":
-			permit = request.values.get("user_auth")
+			permit = (request.values.get("user_auth")).encode('utf-8')
 		
 			#Be carefule!! Must use [] to quote username , otherwise it will
 			#prompt a warning like: "not all arguments converted during string formatting"
@@ -224,8 +224,7 @@ def user_auth_edit(username):
 def user_delete(username):
 	try:
 		set_cn_encoding()
-		
-		username=username
+		username=username 
 		c, conn = connection()
 
 		#Be carefule!! Must use [] to quote username , otherwise it will
@@ -269,7 +268,7 @@ def users_list():
 def log_delete(filename):
 	try:
 		set_cn_encoding()
-		
+		filename = filename 
 		filename = LOGS_PATH + filename
 		os.remove(filename)
 
@@ -293,6 +292,7 @@ def logs_list():
 def log_show(filename):
 	try:
 		set_cn_encoding()
+		filename = filename 
 		list = []
 		for logfile in os.listdir(LOGS_PATH):
 			list.append(logfile)
@@ -300,8 +300,12 @@ def log_show(filename):
 		fn = filename
 		
 		path = LOGS_PATH + fn
-		with open(path, 'r') as file:
+		# with open(path, 'r') as file:
+			# event_lines = file.readlines()
+			
+		with codecs.open(path, 'r' "gb2312") as file:	
 			event_lines = file.readlines()
+			
 
 		data = []
 		num = len(event_lines)
@@ -319,7 +323,6 @@ def log_show(filename):
 def comments():
 	try:
 		error = ''
-		# user_enter_log()
 
 		return  render_template("comments.html", title=u'留言板', error = error)
 	except Exception as e:
@@ -374,12 +377,11 @@ def docs_dashboard():
 def doc_type_edit(filename):
 	error = ''
 	try:
-		set_cn_encoding()
-		
+		filename = filename.encode('utf-8')
 		old_doc_type = ''
-	
+		
 		if request.method == "POST":
-			new_doc_type = request.values.get("doc_type")
+			new_doc_type = (request.values.get("doc_type")).encode('utf-8')
 			#find the path by the filename
 			for root, dirs, files in os.walk(DOCS_PATH):
 				for file in files:
@@ -397,7 +399,7 @@ def doc_type_edit(filename):
 			flash('doc type updated successfully!')
 			return  redirect(url_for('docs_list'))
 		else:
-			filename = filename
+			
 			#find the old_doc_type
 			for root, dirs, files in os.walk(DOCS_PATH):
 				for file in files:
@@ -414,14 +416,53 @@ def doc_type_edit(filename):
 	
 	except Exception as e:
 		return str(e)	
-	
-	
 
+
+@app.route('/doc-name-edit/<filename>/', methods = ['GET','POST'])
+def doc_name_edit(filename):
+	error = ''
+	try:
+		filename = filename.encode('utf-8')
+		doc_type = ''
+		
+		if request.method == "POST":
+			new_filename = (request.values.get("doc_name")).encode('utf-8')
+			#find the path by the filename
+			for root, dirs, files in os.walk(DOCS_PATH):
+				for file in files:
+					if file == filename:
+						doc_path_file = "%s/%s" % (root,file)
+						doc_type = (os.path.split(root))[1]
+						break   #if we found it, exit the loop
+						
+			old_path_file = DOCS_PATH + doc_type + '/' + filename
+			new_path_file = DOCS_PATH + doc_type + '/' + new_filename + '.pdf'
+			#rename the file
+			os.rename(old_path_file, new_path_file)
+		
+			flash('doc renamed successfully!')
+			return  redirect(url_for('docs_list'))
+		else:
+						
+			#Get number of logs/users/docs and display them with "bootstrap badge"
+			num_logs = (sysadm_badges_number())[0]
+			num_users = (sysadm_badges_number())[1]
+			num_docs = (sysadm_badges_number())[2]
+			return render_template("doc-name-edit.html", title=u'修改文件名', filename=filename,
+			num_logs=num_logs, num_users=num_users, num_docs=num_docs,error=error)
+
+	
+	except Exception as e:
+		return str(e)			
+		
+		
+		
+		
 @app.route('/doc-delete/<filename>/')
 @app.route('/doc-delete/')
 def doc_delete(filename):
 	try:
-		set_cn_encoding()
+		filename = filename.encode('utf-8')
 		
 		#find the path by the filename
 		for root, dirs, files in os.walk(DOCS_PATH):
@@ -442,7 +483,6 @@ def doc_delete(filename):
 @app.route("/docs-list/")
 def docs_list():
 	try:
-		set_cn_encoding()
 		
 		fnlist = []
 		dirlist = []
@@ -479,8 +519,7 @@ def server_dashboard():
 	
 	#check auth_type of the logged in user, if not matches, redirect to role_error_page
 	if 'ser' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
-		set_cn_encoding()	
-		
+		set_cn_encoding()
 		write_log_info('server')
 		
 		doclist = []
@@ -495,10 +534,8 @@ def server_dashboard():
 		
 @app.route("/doc-server-show/<filename>/")
 @app.route("/doc-server-show/")
-def doc_server_show(filename):
-	set_cn_encoding()	
-	
-	filename = filename
+def doc_server_show(filename):	
+	filename = filename.encode('utf-8')
 	
 	doclist = []
 	for docfile in os.listdir(SERVER_DOCS_PATH):
@@ -509,8 +546,7 @@ def doc_server_show(filename):
 @app.route("/doc-network-show/<filename>/")
 @app.route("/doc-network-show/")
 def doc_network_show(filename):
-	set_cn_encoding()	
-	filename = filename
+	filename = filename.encode('utf-8')
 
 	doclist = []
 	for docfile in os.listdir(NETWORK_DOCS_PATH):
@@ -521,9 +557,7 @@ def doc_network_show(filename):
 @app.route("/doc-inventory-show/<filename>/")
 @app.route("/doc-inventory-show/")
 def doc_inventory_show(filename):
-	set_cn_encoding()	
-	
-	filename = filename
+	filename = filename.encode('utf-8')
 	
 	doclist = []
 	for docfile in os.listdir(INVENTORY_DOCS_PATH):
@@ -551,8 +585,7 @@ def network_dashboard():
 	
 	#check if auth_type matches
 	if 'net' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
-		set_cn_encoding()			
-		
+		set_cn_encoding()
 		write_log_info('network')
 		
 		doclist = []
@@ -580,8 +613,7 @@ def inventory_dashboard():
 	
 	#check if auth_type matches
 	if 'inv' == auth_type_db or 'adm' == auth_type_db or 'superadm' == auth_type_db:
-		set_cn_encoding()			
-		
+		set_cn_encoding()
 		write_log_info('inventory')
 		
 		doclist = []
