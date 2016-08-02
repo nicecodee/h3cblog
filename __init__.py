@@ -12,7 +12,8 @@ import os
 import requests
 import sys 
 import shutil
-import codecs
+from urllib import urlencode, quote, quote_plus
+from markupsafe import Markup
 from content_mgmt import Content
 from dbconnect import connection
 from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH, DOCS_PATH
@@ -23,7 +24,7 @@ TOPIC_DICT = Content()
 app = Flask(__name__)
 #when using config.py, ALWAYS remember to assign "SECRET_KEY" and "instance_path" to app!!!
 app.secret_key=SECRET_KEY         
-app.instance_path=instance_path
+# app.instance_path=instance_path
 
 #get the location from user's ip
 def get_ip_info(ip):
@@ -44,6 +45,15 @@ def get_ip_info(ip):
 	return ip_info
 
 
+@app.template_filter('urlencode')
+def urlencode_filter(s):
+    if type(s) == 'Markup':
+        s = s.unescape()
+    s = s.encode('utf8')
+    s = urllib.quote_plus(s)
+    return Markup(s)	
+	
+	
 #solve the chinese code problem
 def	set_cn_encoding():
 	reload(sys)
@@ -135,13 +145,13 @@ def login_required(f):
 	
 	
 #only logged in user(s) can access the protected directory
-@app.route('/protected_dir/<path:filename>')
-@login_required
-def protected(filename):
-	try:
-		return send_from_directory(os.path.join(app.instance_path, ''), filename)
-	except Exception as e:
-		return redirect(url_for('homepage'))
+# @app.route('/protected_dir/<path:filename>')
+# @login_required
+# def protected(filename):
+	# try:
+		# return send_from_directory(os.path.join(app.instance_path, ''), filename)
+	# except Exception as e:
+		# return redirect(url_for('homepage'))
 
 		
 	
@@ -282,7 +292,11 @@ def log_delete(filename):
 @app.route("/logs-list/")
 def logs_list():
 	list = []
-	for logfile in os.listdir(LOGS_PATH):
+	#取得logs目录下的所有文件（列表）
+	files = os.listdir(LOGS_PATH)
+	#列表按文件名排序
+	files.sort(reverse = True)  
+	for logfile in files:
 		list.append(logfile)
 	return  render_template("logs-list.html", title=u'日志列表', list=list)	
 		
@@ -293,19 +307,20 @@ def log_show(filename):
 	try:
 		set_cn_encoding()
 		filename = filename 
+		
 		list = []
-		for logfile in os.listdir(LOGS_PATH):
+		#取得logs目录下的所有文件（列表）
+		files = os.listdir(LOGS_PATH)
+		#列表按文件名排序
+		files.sort(reverse = True)  
+		for logfile in files:
 			list.append(logfile)
 			
 		fn = filename
 		
 		path = LOGS_PATH + fn
-		# with open(path, 'r') as file:
-			# event_lines = file.readlines()
-			
-		with codecs.open(path, 'r' "gb2312") as file:	
+		with open(path, 'r') as file:
 			event_lines = file.readlines()
-			
 
 		data = []
 		num = len(event_lines)
@@ -422,6 +437,7 @@ def doc_type_edit(filename):
 def doc_name_edit(filename):
 	error = ''
 	try:
+		set_cn_encoding()
 		filename = filename.encode('utf-8')
 		doc_type = ''
 		
@@ -483,13 +499,12 @@ def doc_delete(filename):
 @app.route("/docs-list/")
 def docs_list():
 	try:
-		
+		set_cn_encoding()
 		fnlist = []
 		dirlist = []
 		for root,dirs,files in os.walk(DOCS_PATH):
 			for i in files:	
 				fnlist.append(i)
-				# dirlist.append(root)
 				dirlist.append((os.path.split(root))[1])
 				
 		num_file = len(fnlist)
@@ -531,10 +546,11 @@ def server_dashboard():
 		write_log_info('serverDenied')
 		return redirect(url_for('role_error_page'))	
 
-		
+# @app.route("/doc-server-show/quote(<filename>)/")		
 @app.route("/doc-server-show/<filename>/")
 @app.route("/doc-server-show/")
 def doc_server_show(filename):	
+	set_cn_encoding()
 	filename = filename.encode('utf-8')
 	
 	doclist = []
@@ -546,6 +562,7 @@ def doc_server_show(filename):
 @app.route("/doc-network-show/<filename>/")
 @app.route("/doc-network-show/")
 def doc_network_show(filename):
+	set_cn_encoding()
 	filename = filename.encode('utf-8')
 
 	doclist = []

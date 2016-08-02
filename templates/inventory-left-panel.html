@@ -1,6 +1,6 @@
 <p><a class="btn btn-success" href="/docs-dashboard/">返回“文档库”</a></p>
 
-<!-- tree view -->
+<!-- collapse view -->
 <div>
 	<div class="panel-group" id="accordion">
 	   <div class="panel panel-info">
@@ -15,9 +15,12 @@
 			 <div class="panel-body">
 				<ul>
 				{% for doc in doclist %}
-					<li><a href="{{ url_for('doc_inventory_show', filename=doc) }}" >{{doc}}</a></li>
-					
-				{% endfor %}
+					{% if filename == doc %}
+						<li><a href="{{ url_for('doc_inventory_show', filename=doc) }}" >{{doc}}&nbsp;&nbsp;<span class="glyphicon glyphicon-ok"" aria-hidden="true"></span></a></li>
+					{% else %}
+						<li><a href="{{ url_for('doc_inventory_show', filename=doc) }}" >{{doc}}</a></li>
+					{% endif %}
+				{% endfor %}			
 				</ul>
 			 </div>
 		  </div>

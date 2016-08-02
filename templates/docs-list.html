@@ -18,7 +18,7 @@
 		   <thead>
 			  <tr>
 			  		<th>序号</th>
-					<th>文件名</th>
+					<th>文件名(可点击查看)</th>
 					<th>存放类型</th>
 					<th>文档作者</th>
 					<th>文档来源</th>
@@ -29,8 +29,17 @@
 				  <tr class="active">    
 				    <td><a href="{{ url_for('doc_delete', filename=fnlist[i], doc_type=dirlist[i]) }}" onclick="return myConfirm(this.href)"><button type="button" class="btn btn-danger" aria-label="right Align"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green">{{i+1}}</font></td> 
 					
-					<td><a href="{{ url_for('doc_name_edit', filename=fnlist[i]) }}"><button type="button" class="btn btn-info" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-					 </button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green"> {{fnlist[i]}}</font></td>
+					<td>
+						<a href="{{ url_for('doc_name_edit', filename=fnlist[i]) }}"><button type="button" class="btn btn-info" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+						</button></a>&nbsp;&nbsp;&nbsp;&nbsp;
+						{% if 'server' == dirlist[i] %}
+							<a href="{{ url_for('doc_server_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
+						{% elif 'network' == dirlist[i] %}
+							<a href="{{ url_for('doc_network_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
+						{% elif 'inventory' == dirlist[i] %}
+							<a href="{{ url_for('doc_network_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
+						{% endif %}
+					 </td>
 				  
 				  
 				  	<td><a href="{{ url_for('doc_type_edit', filename=fnlist[i]) }}"><button type="button" class="btn btn-info" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>

@@ -2,7 +2,7 @@
 
 {% block left_panel %}
 
-	<!-- tree view -->
+	<!-- collapse view -->
 	<p><a class="btn btn-success" href="/sys-admin/">返回“系统管理”</a></p>
 	
 	<div class="panel-group" id="accordion">
@@ -18,8 +18,12 @@
 			 <div class="panel-body">
 				<ul>
 				{% for item in list %}
-					<li><a href="{{ url_for('log_show', filename=item) }}" >{{item}}</a><a href="{{ url_for('log_delete', filename=item) }}" onclick="return myConfirm(this.href)"><span class="glyphicon glyphicon-trash pull-right"" aria-hidden="true"></span></a></li>
-					
+					{% if 0 == list.index(item) %}
+						<li><a href="{{ url_for('log_show', filename=item) }}" >{{item}}&nbsp;&nbsp;<span class="glyphicon glyphicon-star"" aria-hidden="true"></span></a><a href="{{ url_for('log_delete', filename=item) }}" onclick="return myConfirm(this.href)"><span class="glyphicon glyphicon-trash pull-right"" aria-hidden="true"></span></a></li>
+					{% else %}
+				
+					 <li><a href="{{ url_for('log_show', filename=item) }}" >{{item}}</a><a href="{{ url_for('log_delete', filename=item) }}" onclick="return myConfirm(this.href)"><span class="glyphicon glyphicon-trash pull-right"" aria-hidden="true"></span></a></li>
+					{% endif %}
 				{% endfor %}
 				</ul>
 			 </div>
