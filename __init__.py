@@ -7,18 +7,15 @@ from MySQLdb import escape_string as thwart
 import gc
 import datetime, time
 from functools import wraps
-import json
+# import json
 import os
 import requests
 import sys 
 import shutil
-from urllib import urlencode, quote, quote_plus
-from markupsafe import Markup
-from content_mgmt import Content
+from werkzeug import secure_filename
+import re
 from dbconnect import connection
-from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH, DOCS_PATH
-
-TOPIC_DICT = Content()
+from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH, DOCS_PATH, UPLOAD_FOLDER, ALLOWED_EXTENSIONS
 
 
 app = Flask(__name__)
@@ -366,7 +363,61 @@ def role_error_page():
 		return  render_template("role-error.html", title=u'权限错误', auth_type_db=auth_type_db)	
 	except Exception as e:
 		return str(e)
+
+
+# For a given file, return whether it's an allowed type or not
+def doc_allowed(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS		
 	
+
+	
+# @app.route('/doc-upload/', methods=['GET', 'POST'])
+# def doc_upload():
+	# try:
+		# filename = ''
+		# if request.method == 'POST':
+			# file = request.files['file']
+			# if file and doc_allowed(file.filename):
+				# filename = secure_filename(file.filename)
+				# file.save(os.path.join(UPLOAD_FOLDER, filename))
+				
+			# #start to upload
+			# send_from_directory(UPLOAD_FOLDER,filename)	
+			
+			# flash('doc uploaded OK!')
+			# return redirect(url_for('docs_dashboard'))
+		# return render_template("doc-upload.html", title=u'文档上传')	
+	# except Exception as e:
+		# return str(e)
+		
+		
+@app.route('/doc-upload/', methods=['GET', 'POST'])
+def doc_upload():
+	try:
+		filename = ''
+		if request.method == 'POST':
+			file = request.files['file']
+			doc_type = (request.values.get("doc_type")).encode('utf-8')
+			
+			UP_FOLDER = DOCS_PATH + doc_type + '/'
+			
+			if file and doc_allowed(file.filename):
+				filename = secure_filename(file.filename)
+				file.save(os.path.join(UP_FOLDER, filename))
+			
+			#start to upload
+			send_from_directory(UP_FOLDER,filename)	
+			
+			flash('file type is: %s!' % type(filename))
+			flash('filename is: %s!' % filename)
+			return redirect(url_for('docs_dashboard'))
+		return render_template("doc-upload.html", title=u'文档上传')	
+	except Exception as e:
+		return str(e)
+
+		
+		
 #main docs viewing
 @app.route("/docs-dashboard/")
 @login_required
@@ -521,9 +572,9 @@ def docs_list():
 
 	
 #Server docs viewing
-@app.route("/server-dashboard/")
+@app.route("/doc-server-dashboard/")
 @login_required
-def server_dashboard():	
+def doc_server_dashboard():	
 	c, conn = connection()
 	#Be carefule!! Must use [] to quote session['username'] , otherwise it will
 	#prompt a warning like: "not all arguments converted during string formatting"
@@ -541,7 +592,7 @@ def server_dashboard():
 		for docfile in os.listdir(SERVER_DOCS_PATH):
 			doclist.append(docfile)
 
-		return  render_template("server-dashboard.html", title=u'服务器岗文档库', doclist = doclist)
+		return  render_template("doc-server-dashboard.html", title=u'服务器岗文档库', doclist = doclist)
 	else:
 		write_log_info('serverDenied')
 		return redirect(url_for('role_error_page'))	
@@ -574,6 +625,7 @@ def doc_network_show(filename):
 @app.route("/doc-inventory-show/<filename>/")
 @app.route("/doc-inventory-show/")
 def doc_inventory_show(filename):
+	set_cn_encoding()
 	filename = filename.encode('utf-8')
 	
 	doclist = []
@@ -582,16 +634,10 @@ def doc_inventory_show(filename):
 	return  render_template("doc-inventory-show.html", title=u'资产岗文档', filename=filename, doclist=doclist)
 
 	
-@app.route("/server-issue-handle/")
-@login_required
-def server_issue_handle():
-	return  render_template("docs_html/server-issue-handle.html", TOPIC_DICT = TOPIC_DICT)
-
-	
 #Network docs viewing	
-@app.route("/network-dashboard/")
+@app.route("/doc-network-dashboard/")
 @login_required
-def network_dashboard():	
+def doc_network_dashboard():	
 	c, conn = connection()
 	#Be carefule!! Must use [] to quote session['username'] , otherwise it will
 	#prompt a warning like: "not all arguments converted during string formatting"
@@ -609,7 +655,7 @@ def network_dashboard():
 		for docfile in os.listdir(NETWORK_DOCS_PATH):
 			doclist.append(docfile)
 		
-		return  render_template("network-dashboard.html", title=u'网络岗文档库', doclist = doclist)	
+		return  render_template("doc-network-dashboard.html", title=u'网络岗文档库', doclist = doclist)	
 	else:
 		write_log_info('networkDenied')
 		return redirect(url_for('role_error_page'))	
@@ -617,7 +663,7 @@ def network_dashboard():
 
 
 #Inventory docs viewing	
-@app.route("/inventory-dashboard/")
+@app.route("/doc-inventory-dashboard/")
 @login_required
 def inventory_dashboard():	
 	c, conn = connection()
@@ -637,7 +683,7 @@ def inventory_dashboard():
 		for docfile in os.listdir(INVENTORY_DOCS_PATH):
 			doclist.append(docfile)
 		
-		return  render_template("inventory-dashboard.html", title=u'资产岗文档库', doclist = doclist)			
+		return  render_template("doc-inventory-dashboard.html", title=u'资产岗文档库', doclist = doclist)			
 	else:
 		write_log_info('inventoryDenied')
 		return redirect(url_for('role_error_page'))	
