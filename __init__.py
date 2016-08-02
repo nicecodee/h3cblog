@@ -7,13 +7,11 @@ from MySQLdb import escape_string as thwart
 import gc
 import datetime, time
 from functools import wraps
-# import json
 import os
 import requests
 import sys 
 import shutil
 from werkzeug import secure_filename
-import re
 from dbconnect import connection
 from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH, DOCS_PATH, UPLOAD_FOLDER, ALLOWED_EXTENSIONS
 
@@ -370,27 +368,6 @@ def doc_allowed(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS		
 	
-
-	
-# @app.route('/doc-upload/', methods=['GET', 'POST'])
-# def doc_upload():
-	# try:
-		# filename = ''
-		# if request.method == 'POST':
-			# file = request.files['file']
-			# if file and doc_allowed(file.filename):
-				# filename = secure_filename(file.filename)
-				# file.save(os.path.join(UPLOAD_FOLDER, filename))
-				
-			# #start to upload
-			# send_from_directory(UPLOAD_FOLDER,filename)	
-			
-			# flash('doc uploaded OK!')
-			# return redirect(url_for('docs_dashboard'))
-		# return render_template("doc-upload.html", title=u'文档上传')	
-	# except Exception as e:
-		# return str(e)
-		
 		
 @app.route('/doc-upload/', methods=['GET', 'POST'])
 def doc_upload():
@@ -400,17 +377,17 @@ def doc_upload():
 			file = request.files['file']
 			doc_type = (request.values.get("doc_type")).encode('utf-8')
 			
-			UP_FOLDER = DOCS_PATH + doc_type + '/'
+			to_folder = DOCS_PATH + doc_type + '/'
 			
 			if file and doc_allowed(file.filename):
-				filename = secure_filename(file.filename)
-				file.save(os.path.join(UP_FOLDER, filename))
-			
+				# filename = secure_filename(file.filename)   ###由于secure_filename不能识别中文名，暂停使用
+				filename = (file.filename).encode('utf-8')
+				file.save(os.path.join(to_folder, filename))
+
 			#start to upload
-			send_from_directory(UP_FOLDER,filename)	
+			send_from_directory(to_folder,filename)	
 			
-			flash('file type is: %s!' % type(filename))
-			flash('filename is: %s!' % filename)
+			flash('doc uploaded successfully')
 			return redirect(url_for('docs_dashboard'))
 		return render_template("doc-upload.html", title=u'文档上传')	
 	except Exception as e:
