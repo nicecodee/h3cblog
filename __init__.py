@@ -420,6 +420,7 @@ def docs_dashboard():
 def doc_type_edit(filename):
 	error = ''
 	try:
+		set_cn_encoding()
 		filename = filename.encode('utf-8')
 		old_doc_type = ''
 		
@@ -434,13 +435,17 @@ def doc_type_edit(filename):
 						break   #if we found it, exit the loop
 						
 			new_path_file = DOCS_PATH + new_doc_type + '/' + filename
-			#copy the old_path_file to new_path_file of new type
-			shutil.copy(old_path_file, new_path_file) 
-			#remove the old_path_file
-			os.remove(old_path_file)
+			if old_path_file == new_path_file:
+				flash('file exists! action abort!')
+				return  redirect(url_for('docs_list'))
+			else:
+				#copy the old_path_file to new_path_file of new type
+				shutil.copy(old_path_file, new_path_file) 
+				#remove the old_path_file
+				os.remove(old_path_file)
 		
-			flash('doc type updated successfully!')
-			return  redirect(url_for('docs_list'))
+				flash('doc type updated successfully!')
+				return  redirect(url_for('docs_list'))
 		else:
 			
 			#find the old_doc_type
