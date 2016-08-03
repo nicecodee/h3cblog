@@ -17,9 +17,9 @@ from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWOR
 
 
 app = Flask(__name__)
-#when using config.py, ALWAYS remember to assign "SECRET_KEY" and "instance_path" to app!!!
-app.secret_key=SECRET_KEY         
 # app.instance_path=instance_path
+app.secret_key=SECRET_KEY         
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  #限制文件上传大小(10M)
 
 #get the location from user's ip
 def get_ip_info(ip):
