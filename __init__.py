@@ -38,21 +38,24 @@ def get_ip_info(ip):
 		
 		ip_info = country + '/' + region + '/' + city + '/' + isp
 	return ip_info
-
-
-@app.template_filter('urlencode')
-def urlencode_filter(s):
-    if type(s) == 'Markup':
-        s = s.unescape()
-    s = s.encode('utf8')
-    s = urllib.quote_plus(s)
-    return Markup(s)	
-	
+		
 	
 #solve the chinese code problem
 def	set_cn_encoding():
 	reload(sys)
 	sys.setdefaultencoding('utf-8')
+
+
+#create dir tree-view
+def docs_tree_view(d, n = 0):
+	path = DOCS_PATH + 'docs_tree.txt'
+	f = open(path, 'a+')
+	for i in os.listdir(d):
+		p = os.path.join(d,i)
+		print >>f, (n*'|   '+'|__'+os.path.basename(p))
+		if os.path.isdir(p):
+			tree(p, n+1)
+	f.close()
 
 
 #calculate the number of docs of different type for badges displaying
@@ -426,10 +429,9 @@ def doc_upload():
 		
 	except Exception as e:
 		# return str(e)
-		flash(u'上传失败，请重新尝试!')
+		flash(u'上传失败！ 请检查上传的文件是否符合要求，再重新尝试!')
 		return redirect(url_for('doc_upload'))
 
-		
 		
 #main docs viewing
 @app.route("/docs-dashboard/")
@@ -439,6 +441,7 @@ def docs_dashboard():
 	num_server = (docs_badges_number())[0]
 	num_network = (docs_badges_number())[1]
 	num_inventory = (docs_badges_number())[2]
+	
 	
 	return  render_template("docs-dashboard.html", title=u'文档库', num_server=num_server, num_network=num_network, num_inventory=num_inventory)	
 
