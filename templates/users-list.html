@@ -8,9 +8,18 @@
 	
 {% block right_panel %}
 	
-
+ 
 <div class="leaderboard">
 	<caption><h1>用户列表</h1></caption>
+	<hr>
+	<I><font size="3" face="arial" color="blue">权限说明：</font></I><br>
+	<I><b>superadm:</b> 唯一拥有“系统管理”权限的超级管理员用户</I><br>
+	<I><b>adm:</b> 可以查看所有文档库内容</I><br>
+	<I><b>ser:</b> 可以查看服务器岗文档库</I><br>
+	<I><b>net:</b> 可以查看网络岗文档库</I><br>
+	<I><b>inv:</b> 可以查看资产岗文档库</I><br>
+	<I><b>None:</b> 普通登陆用户，不能查看、上传任何文档</I>
+	<hr>
 	
 	<div style="position:absolute; width:65%; height:450px; overflow-y:auto">
 		<table class="table table-hover">
