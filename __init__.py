@@ -190,6 +190,7 @@ def about_team():
 	
 	
 @app.route("/sys-admin/")
+@login_required
 def sys_admin():
 	c, conn = connection()
 	#Be carefule!! Must use [] to quote session['username'] , otherwise it will
@@ -217,6 +218,7 @@ def sys_admin():
 
 
 @app.route('/user-auth-edit/<username>/', methods = ['GET','POST'])
+@login_required
 def user_auth_edit(username):
 	error = ''
 	try:
@@ -255,6 +257,7 @@ def user_auth_edit(username):
 		
 @app.route('/user-delete/<username>/')
 @app.route('/user-delete/')
+@login_required
 def user_delete(username):
 	try:
 		set_cn_encoding()
@@ -279,6 +282,7 @@ def user_delete(username):
 	
 		
 @app.route("/users-list/")
+@login_required
 def users_list():
 	try:
 		c, conn = connection()
@@ -299,6 +303,7 @@ def users_list():
 
 @app.route('/log-delete/<filename>/')
 @app.route('/log-delete/')
+@login_required
 def log_delete(filename):
 	try:
 		set_cn_encoding()
@@ -314,6 +319,7 @@ def log_delete(filename):
 	
 	
 @app.route("/logs-list/")
+@login_required
 def logs_list():
 	list = []
 	#取得logs目录下的所有文件（列表）
@@ -327,6 +333,7 @@ def logs_list():
 		
 @app.route('/log-show/<filename>/')
 @app.route("/log-show/") 
+@login_required
 def log_show(filename):
 	try:
 		set_cn_encoding()
@@ -373,9 +380,9 @@ def privacy():
 	return  render_template("privacy.html", title=u'网站规定和隐私协议')
 	
 	
-
 	
 @app.route("/role-error/")
+@login_required
 def role_error_page():
 	try:
 		auth_type_db = ''
@@ -399,6 +406,7 @@ def doc_allowed(filename):
 	
 		
 @app.route('/doc-upload/', methods=['GET', 'POST'])
+@login_required
 def doc_upload():
 	try:
 		filename = ''
@@ -455,6 +463,7 @@ def docs_dashboard():
 		return str(e)
 
 @app.route('/doc-type-edit/<filename>/', methods = ['GET','POST'])
+@login_required
 def doc_type_edit(filename):
 	error = ''
 	try:
@@ -505,6 +514,7 @@ def doc_type_edit(filename):
 
 
 @app.route('/doc-name-edit/<filename>/', methods = ['GET','POST'])
+@login_required
 def doc_name_edit(filename):
 	error = ''
 	try:
@@ -547,6 +557,7 @@ def doc_name_edit(filename):
 		
 @app.route('/doc-delete/<filename>/')
 @app.route('/doc-delete/')
+@login_required
 def doc_delete(filename):
 	try:
 		filename = filename.encode('utf-8')
@@ -568,6 +579,7 @@ def doc_delete(filename):
 
 	
 @app.route("/docs-list/")
+@login_required
 def docs_list():
 	try:
 		set_cn_encoding()
@@ -620,6 +632,7 @@ def doc_server_dashboard():
 # @app.route("/doc-server-show/quote(<filename>)/")		
 @app.route("/doc-server-show/<filename>/")
 @app.route("/doc-server-show/")
+@login_required
 def doc_server_show(filename):	
 	set_cn_encoding()
 	filename = filename.encode('utf-8')
@@ -632,6 +645,7 @@ def doc_server_show(filename):
 
 @app.route("/doc-network-show/<filename>/")
 @app.route("/doc-network-show/")
+@login_required
 def doc_network_show(filename):
 	set_cn_encoding()
 	filename = filename.encode('utf-8')
@@ -644,6 +658,7 @@ def doc_network_show(filename):
 
 @app.route("/doc-inventory-show/<filename>/")
 @app.route("/doc-inventory-show/")
+@login_required
 def doc_inventory_show(filename):
 	set_cn_encoding()
 	filename = filename.encode('utf-8')

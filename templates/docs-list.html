@@ -28,22 +28,35 @@
 		   </thead> 
 		   <tbody>
 				{% for i in range(num_file) %}
-				  <tr class="active">    
-				    <td><a href="{{ url_for('doc_delete', filename=fnlist[i], doc_type=dirlist[i]) }}" onclick="return myConfirm(this.href)"><button type="button" class="btn btn-danger" aria-label="right Align"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green">{{i+1}}</font></td> 
+					{% if 'server' == dirlist[i] %}  <!-- 不同文档类型，显示不同的背景色 -->
+					<tr class="active">    
+						<td><a href="{{ url_for('doc_delete', filename=fnlist[i], doc_type=dirlist[i]) }}" onclick="return myConfirm(this.href)"><button type="button" class="btn btn-danger" aria-label="right Align"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green">{{i+1}}</font></td> 
 					
-					<td>
-						<a href="{{ url_for('doc_name_edit', filename=fnlist[i]) }}"><button type="button" class="btn btn-info" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-						</button></a>&nbsp;&nbsp;&nbsp;&nbsp;
-						{% if 'server' == dirlist[i] %}
-							<a href="{{ url_for('doc_server_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
-						{% elif 'network' == dirlist[i] %}
-							<a href="{{ url_for('doc_network_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
-						{% elif 'inventory' == dirlist[i] %}
-							<a href="{{ url_for('doc_inventory_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
-						{% endif %}
-					 </td>
-				  
-				  
+						<td>
+							<a href="{{ url_for('doc_name_edit', filename=fnlist[i]) }}"><button type="button" class="btn btn-info" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+							</button></a>&nbsp;&nbsp;&nbsp;&nbsp;
+								<a href="{{ url_for('doc_server_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
+						 </td>
+					{% elif 'network' == dirlist[i] %}
+					<tr class="success">     
+						<td><a href="{{ url_for('doc_delete', filename=fnlist[i], doc_type=dirlist[i]) }}" onclick="return myConfirm(this.href)"><button type="button" class="btn btn-danger" aria-label="right Align"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green">{{i+1}}</font></td> 
+					
+						<td>
+							<a href="{{ url_for('doc_name_edit', filename=fnlist[i]) }}"><button type="button" class="btn btn-info" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+							</button></a>&nbsp;&nbsp;&nbsp;&nbsp;
+								<a href="{{ url_for('doc_network_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
+						 </td>
+					{% elif 'inventory' == dirlist[i] %}
+					<tr class="warning">    
+						<td><a href="{{ url_for('doc_delete', filename=fnlist[i], doc_type=dirlist[i]) }}" onclick="return myConfirm(this.href)"><button type="button" class="btn btn-danger" aria-label="right Align"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green">{{i+1}}</font></td> 
+					
+						<td>
+							<a href="{{ url_for('doc_name_edit', filename=fnlist[i]) }}"><button type="button" class="btn btn-info" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+							</button></a>&nbsp;&nbsp;&nbsp;&nbsp;
+								<a href="{{ url_for('doc_inventory_show', filename=fnlist[i]) }}"> {{fnlist[i]}}</a>
+						 </td>
+					{% endif %}
+					
 				  	<td><a href="{{ url_for('doc_type_edit', filename=fnlist[i]) }}"><button type="button" class="btn btn-info" aria-label="right Align"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
 					 </button></a>&nbsp;&nbsp;&nbsp;&nbsp;<font size="3" face="arial" color="green"> {{dirlist[i]}}</font></td>
 				  
@@ -53,7 +66,7 @@
 					<td>None</td>
 					<td>None</td>
 					<td>None</td>
-				  </tr>
+				</tr>
 				{% endfor %}
 		   </tbody>
 		</table> 
