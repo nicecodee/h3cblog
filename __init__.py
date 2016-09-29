@@ -187,34 +187,6 @@ def homepage():
 def about_team():
 	return  render_template("about-team.html", title=u'团队介绍')
 	
-	
-	
-@app.route("/sys-admin/")
-@login_required
-def sys_admin():
-	c, conn = connection()
-	#Be carefule!! Must use [] to quote session['username'] , otherwise it will
-	#prompt a warning like: "not all arguments converted during string formatting"
-	c.execute("select * from users where username = (%s)", [session['username']])
-	
-	#get the auth_type of first record
-	auth_type_db = c.fetchone()[5]
-	
-	#check auth_type of the logged in user, if not matches, redirect to role_error_page
-	if 'superadm' == auth_type_db:
-		set_cn_encoding()
-		write_log_info('server')
-		
-		#Get number of logs/users/docs and display them with "bootstrap badge"
-		num_logs = (sysadm_badges_number())[0]
-		num_users = (sysadm_badges_number())[1]
-		num_docs = (sysadm_badges_number())[2]
-		
-		return  render_template("sys-admin.html", title=u'系统管理', num_logs=num_logs, num_users=num_users, num_docs=num_docs)
-	else:
-		write_log_info('superadmDenied')
-		return redirect(url_for('role_error_page'))	
-
 
 
 @app.route('/user-auth-edit/<username>/', methods = ['GET','POST'])
@@ -321,6 +293,10 @@ def log_delete(filename):
 @app.route("/logs-list/")
 @login_required
 def logs_list():
+
+	#Get number of logs
+	num_logs = (sysadm_badges_number())[0]
+
 	list = []
 	#取得logs目录下的所有文件（列表）
 	files = os.listdir(LOGS_PATH)
@@ -328,7 +304,7 @@ def logs_list():
 	files.sort(reverse = True)  
 	for logfile in files:
 		list.append(logfile)
-	return  render_template("logs-list.html", title=u'日志列表', list=list)	
+	return  render_template("logs-list.html", title=u'日志列表', num_logs=num_logs, list=list)	
 		
 		
 @app.route('/log-show/<filename>/')
@@ -338,6 +314,9 @@ def log_show(filename):
 	try:
 		set_cn_encoding()
 		filename = filename 
+		
+		#Get number of logs
+		num_logs = (sysadm_badges_number())[0]
 		
 		list = []
 		#取得logs目录下的所有文件（列表）
@@ -359,7 +338,7 @@ def log_show(filename):
 		for x in range(num):
 			data.append(event_lines[x].split(" "))
 		
-		return  render_template("log-show.html", title=u'查看日志', num=num, data=data, list=list, fn=fn)
+		return  render_template("log-show.html", title=u'查看日志', num=num, data=data, list=list, fn=fn,num_logs=num_logs)
 		
 	except Exception as e: 
 		return str(e)
@@ -444,23 +423,6 @@ def doc_upload():
 		flash(u'上传失败！ 请检查上传的文件是否符合要求，再重新尝试!')
 		return redirect(url_for('doc_upload'))
 
-		
-#main docs viewing
-@app.route("/docs-dashboard/")
-@login_required
-def docs_dashboard():
-	try:
-		#Get number of docs and display it with "bootstrap badge"
-		num_server = (docs_badges_number())[0]
-		num_network = (docs_badges_number())[1]
-		num_inventory = (docs_badges_number())[2]
-		
-		set_cn_encoding()
-		tree=make_tree(DOCS_PATH)
-		
-		return  render_template("docs-dashboard.html", title=u'文档库', num_server=num_server, num_network=num_network, num_inventory=num_inventory, tree=tree)	
-	except Exception as e:
-		return str(e)
 
 @app.route('/doc-type-edit/<filename>/', methods = ['GET','POST'])
 @login_required
@@ -624,7 +586,10 @@ def doc_server_dashboard():
 		for docfile in os.listdir(SERVER_DOCS_PATH):
 			doclist.append(docfile)
 
-		return  render_template("doc-server-dashboard.html", title=u'服务器岗文档库', doclist = doclist)
+		#Get number of docs of server
+		num_server = (docs_badges_number())[0]	
+			
+		return  render_template("doc-server-dashboard.html", title=u'服务器岗文档库', num_server=num_server,doclist = doclist)
 	else:
 		write_log_info('serverDenied')
 		return redirect(url_for('role_error_page'))	
@@ -690,7 +655,10 @@ def doc_network_dashboard():
 		for docfile in os.listdir(NETWORK_DOCS_PATH):
 			doclist.append(docfile)
 		
-		return  render_template("doc-network-dashboard.html", title=u'网络岗文档库', doclist = doclist)	
+		#Get number of docs of network
+		num_network = (docs_badges_number())[1]	
+		
+		return  render_template("doc-network-dashboard.html", title=u'网络岗文档库', num_network=num_network,doclist = doclist)	
 	else:
 		write_log_info('networkDenied')
 		return redirect(url_for('role_error_page'))	
@@ -718,7 +686,10 @@ def doc_inventory_dashboard():
 		for docfile in os.listdir(INVENTORY_DOCS_PATH):
 			doclist.append(docfile)
 		
-		return  render_template("doc-inventory-dashboard.html", title=u'资产岗文档库', doclist = doclist)			
+		#Get number of docs of inventory
+		num_inventory = (docs_badges_number())[2]	
+		
+		return  render_template("doc-inventory-dashboard.html", title=u'资产岗文档库', num_inventory=num_inventory,doclist = doclist)			
 	else:
 		write_log_info('inventoryDenied')
 		return redirect(url_for('role_error_page'))	

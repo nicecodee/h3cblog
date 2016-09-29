@@ -1,8 +1,6 @@
 {% extends "layout.html" %}
 
 {% block left_panel %}
-
-	<p><a class="btn btn-success" href="/sys-admin/">返回“系统管理”</a></p>
 	
 	<!-- collapse view -->
 
@@ -12,7 +10,7 @@
 			 <h4 class="panel-title">
 				<a data-toggle="collapse" data-parent="#accordion" 
 				   href="#collapseOne">日志列表
-				</a>
+				</a><span class="badge pull-right">{{num_logs}}</span>
 			 </h4>
 		  </div>
 		  <div id="collapseOne" class="panel-collapse collapse in">
