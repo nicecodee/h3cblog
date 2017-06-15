@@ -36,11 +36,7 @@
 				{% for row in range(num) %}
 					<tr class="active">
 						{% for column in range(15) %}
-						    {% if column == 0 %}
-							    <td> <a href="{{ url_for('wb_update', name=filedata[row][column]) }}">{{ filedata[row][column] }}</a> </td>
-							{% else %}
-						        <td> {{ filedata[row][column] }} </td>
-							{% endif %}
+						<td> {{ filedata[row][column] }} </td>
 						{% endfor %}
 					</tr>
 				{% endfor %}

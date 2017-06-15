@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 from flask import Flask, render_template, flash, request, url_for, session,redirect, session, send_from_directory
 #from flask.ext.sqlalchemy import SQLAlchemy
-from wtforms import Form, BooleanField, TextField, PasswordField, validators, RadioField
+from wtforms import Form, BooleanField, TextField, PasswordField, validators, RadioField, SubmitField
 from wtforms.validators import DataRequired, Length
 from passlib.hash import sha256_crypt
 from MySQLdb import escape_string as thwart
@@ -61,6 +61,7 @@ class WhiteboardForm(Form):
 	day4_pm = TextField(u'周四下午' )	
 	day5_am = TextField(u'周五上午' )
 	day5_pm = TextField(u'周五下午' )
+	submit1 = SubmitField('submit')
 
 class AddmemberForm(Form):
 	name = TextField(u'添加姓名(至最后一行)', [validators.Required()])
@@ -85,14 +86,11 @@ def wb_thisweek():
 		path = WEEKLY_PATH + 'weekly_' + str(start)
 		namelist_path = WEEKLY_NAMELIST_PATH + 'namelist'
 		if not os.path.isfile(path):
-			shutil.copy(namelist_path,  path)
-			
+			shutil.copy(namelist_path,  path)				
 		with open(path, 'r') as file:
 			name_lines = file.readlines()
-
 		filedata = []
 		num = len(name_lines)
-
 		for x in range(num):
 			filedata.append(name_lines[x].split(" "))		
 		
@@ -101,8 +99,66 @@ def wb_thisweek():
 	except Exception as e:
 		return(str(e))
 
-@app.route("/wb-update/", methods = ['GET','POST'])
-def wb_update():
+# 已弃用：独立页面的白板更新(不能通过点击人名跳转到更新页面，对应于wb-update(独立页面).html）
+# @app.route("/wb-update/", methods = ['GET','POST'])  
+# def wb_update():
+	# try:
+		# set_cn_encoding()	
+		
+		# #calculate the weekdays based on today's date automatically
+		# today = datetime.date.today()
+		# start = today + datetime.timedelta(-2 - today.weekday())
+		# weekdays = []
+		# for i in range(7):     #计算该周的所有日期
+			# tmp_weekday = start + datetime.timedelta(days = i)
+			# weekdays.append(tmp_weekday)
+			
+		# form = WhiteboardForm(request.form)
+		# if request.method == "POST" and form.validate():
+			# name = form.name.data
+			# day6_am = form.day6_am.data
+			# day6_pm = form.day6_pm.data
+			# day7_am = form.day7_am.data
+			# day7_pm = form.day7_pm.data
+			# day1_am = form.day1_am.data
+			# day1_pm = form.day1_pm.data
+			# day2_am = form.day2_am.data
+			# day2_pm = form.day2_pm.data
+			# day3_am = form.day3_am.data
+			# day3_pm = form.day3_pm.data
+			# day4_am = form.day4_am.data
+			# day4_pm = form.day4_pm.data
+			# day5_am = form.day5_am.data
+			# day5_pm = form.day5_pm.data
+			
+			# old_path = WEEKLY_PATH + 'weekly_' + str(start)
+			# new_path = WEEKLY_PATH + 'tmp.log'			
+			# data = name + ' ' + day6_am	 + ' ' + day6_pm  + ' ' + day7_am + ' ' + day7_pm  + ' ' \
+			# + day1_am + ' ' + day1_pm + ' ' + day2_am + ' ' + day2_pm + ' ' + day3_am + ' ' \
+			# + day3_pm + ' ' + day4_am + ' ' + day4_pm + ' ' + day5_am + ' ' + day5_pm
+			
+			# with open(old_path, 'r') as f, open(new_path, 'w') as fout:
+				# NAME_EXIST = 0
+				# for line in f:
+					# if line.startswith(name):
+						# line = data + '\n'
+						# NAME_EXIST = 1
+					# fout.write(line)  
+				# if NAME_EXIST == 1:
+					# os.rename(new_path, old_path)
+					# return redirect(url_for('wb_thisweek')) #return to wb_thisweek if NAME_EXIST = 1
+				# else:
+					# return redirect(url_for('wb_update'))	#return to wb_update if NAME_EXIST = 0
+		# return render_template("wb-update.html", title=u'更新白板', form=form, weekdays=weekdays)
+		
+	# except Exception as e:
+		# return(str(e))		
+
+#可通过点击人名，跳转到白板更新页面
+@app.route('/wb-update/<name>/')
+@app.route("/wb-update/") 
+@app.route('/wb-update/<name>/', methods = ['GET','POST'])
+def wb_update(name):
 	try:
 		set_cn_encoding()	
 		
@@ -113,24 +169,34 @@ def wb_update():
 		for i in range(7):     #计算该周的所有日期
 			tmp_weekday = start + datetime.timedelta(days = i)
 			weekdays.append(tmp_weekday)
-			
+
+		#fillin the weekly form based on the name automatically
+		path = WEEKLY_PATH + 'weekly_' + str(start)		
+		with open(path, 'r') as file:
+			for line in file:
+				if line.startswith(name):
+					data_line=line
+					filedata = []
+					filedata.append(data_line.split(" "))
+					break
+
+		#update personal whiteboard	
 		form = WhiteboardForm(request.form)
-		if request.method == "POST" and form.validate():
-			name = form.name.data
-			day6_am = form.day6_am.data
-			day6_pm = form.day6_pm.data
-			day7_am = form.day7_am.data
-			day7_pm = form.day7_pm.data
-			day1_am = form.day1_am.data
-			day1_pm = form.day1_pm.data
-			day2_am = form.day2_am.data
-			day2_pm = form.day2_pm.data
-			day3_am = form.day3_am.data
-			day3_pm = form.day3_pm.data
-			day4_am = form.day4_am.data
-			day4_pm = form.day4_pm.data
-			day5_am = form.day5_am.data
-			day5_pm = form.day5_pm.data
+		if request.method == "POST":
+			day6_am = request.form['day6_am']
+			day6_pm = request.form['day6_pm']
+			day7_am = request.form['day7_am']
+			day7_pm = request.form['day7_pm']
+			day1_am = request.form['day1_am']
+			day1_pm = request.form['day1_pm']
+			day2_am = request.form['day2_am']
+			day2_pm = request.form['day2_pm']
+			day3_am = request.form['day3_am']
+			day3_pm = request.form['day3_pm']
+			day4_am = request.form['day4_am']
+			day4_pm = request.form['day4_pm']
+			day5_am = request.form['day5_am']
+			day5_pm = request.form['day5_pm']
 			
 			old_path = WEEKLY_PATH + 'weekly_' + str(start)
 			new_path = WEEKLY_PATH + 'tmp.log'			
@@ -139,22 +205,19 @@ def wb_update():
 			+ day3_pm + ' ' + day4_am + ' ' + day4_pm + ' ' + day5_am + ' ' + day5_pm
 			
 			with open(old_path, 'r') as f, open(new_path, 'w') as fout:
-				NAME_EXIST = 0
 				for line in f:
-					if line.startswith(name):
+					if line.startswith(name):  #找到匹配的名字，用填在表格的data替换这一行
 						line = data + '\n'
-						NAME_EXIST = 1
 					fout.write(line)  
-				if NAME_EXIST == 1:
-					os.rename(new_path, old_path)
-					return redirect(url_for('wb_thisweek')) #return to wb_thisweek if NAME_EXIST = 1
-				else:
-					return redirect(url_for('wb_update'))	#return to wb_update if NAME_EXIST = 0
-		return render_template("wb-update.html", title=u'更新白板', form=form, weekdays=weekdays)
+				os.rename(new_path, old_path)
+			return redirect(url_for('wb_update', name=name))	 
+		return render_template("wb-update.html", title=u'更新白板', form=form, weekdays=weekdays, filedata=filedata)
 		
 	except Exception as e:
-		return(str(e))		
-
+		return(str(e))			
+		
+		
+		
 @app.route("/wb-add-member/", methods = ['GET','POST'])
 def wb_add_member():
 	try:
