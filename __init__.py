@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 from flask import Flask, render_template, flash, request, url_for, session,redirect, session, send_from_directory
+#from flask.ext.sqlalchemy import SQLAlchemy
 from wtforms import Form, BooleanField, TextField, PasswordField, validators, RadioField
 from wtforms.validators import DataRequired, Length
 from passlib.hash import sha256_crypt
@@ -13,7 +14,8 @@ import sys
 import shutil
 from werkzeug import secure_filename
 from dbconnect import connection
-from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH, DOCS_PATH, UPLOAD_FOLDER, ALLOWED_EXTENSIONS
+from config import SECRET_KEY, instance_path, LOGS_PATH,SERVER_DOCS_PATH, NETWORK_DOCS_PATH, INVENTORY_DOCS_PATH, \
+      DOCS_PATH, UPLOAD_FOLDER, ALLOWED_EXTENSIONS,WEEKLY_PATH,WEEKLY_NAMELIST_PATH
 
 
 app = Flask(__name__)
@@ -21,6 +23,273 @@ app = Flask(__name__)
 app.secret_key=SECRET_KEY         
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  #限制文件上传大小(10M)
 
+#use SQLAlchemy to manage mysql
+# app.config['SQLALCHEMY_DATABASE_URI'] =  'mysql://root:jxlgood@localhost/h3cblog'    
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+#db = SQLAlchemy(app)
+
+
+#check if user has logged in(it needs to be defined before other functions)
+def login_required(f):
+	@wraps(f)
+	def wrap(*args, **kwargs):
+		if 'logged_in' in session:
+			return f(*args, **kwargs)
+		else:
+			#record the url I want to access
+			# session["want_url"] = request.url
+			
+			flash(u'请您先登陆！')
+			return redirect(url_for('login_page'))			
+			
+	return wrap
+
+	
+class WhiteboardForm(Form):
+	name = TextField(u'姓名', [validators.Required()])
+	day6_am = TextField(u'周六上午' )
+	day6_pm = TextField(u'周六下午' )
+	day7_am = TextField(u'周日上午' )
+	day7_pm = TextField(u'周日下午' )
+	day1_am = TextField(u'周一上午' )
+	day1_pm = TextField(u'周一下午' )
+	day2_am = TextField(u'周二上午' )
+	day2_pm = TextField(u'周二下午' )
+	day3_am = TextField(u'周三上午' )
+	day3_pm = TextField(u'周三下午' )	
+	day4_am = TextField(u'周四上午' )
+	day4_pm = TextField(u'周四下午' )	
+	day5_am = TextField(u'周五上午' )
+	day5_pm = TextField(u'周五下午' )
+
+class AddmemberForm(Form):
+	name = TextField(u'添加姓名', [validators.Required()])
+	
+class DelmemberForm(Form):
+	name = TextField(u'删除姓名', [validators.Required()])
+	
+@app.route("/wb-thisweek/")
+def wb_thisweek():
+	try:
+		set_cn_encoding()	
+		
+		#calculate the weekdays based on today's date automatically
+		today = datetime.date.today()
+		start = today + datetime.timedelta(-2 - today.weekday())
+		weekdays = []
+		for i in range(7):
+			tmp_weekday = start + datetime.timedelta(days = i)
+			weekdays.append(tmp_weekday)
+		
+		#fillin the weekly form based on the record automatically
+		path = WEEKLY_PATH + 'weekly_' + str(start)
+		namelist_path = WEEKLY_NAMELIST_PATH + 'namelist'
+		if not os.path.isfile(path):
+			shutil.copy(namelist_path,  path)
+			
+		with open(path, 'r') as file:
+			name_lines = file.readlines()
+
+		filedata = []
+		num = len(name_lines)
+
+		for x in range(num):
+			filedata.append(name_lines[x].split(" "))		
+		
+		return render_template("wb-thisweek.html", title=u'本周白板',num=num, weekdays=weekdays,filedata=filedata)
+		
+	except Exception as e:
+		return(str(e))
+
+@app.route("/wb-update/", methods = ['GET','POST'])
+def wb_update():
+	try:
+		set_cn_encoding()	
+		
+		#calculate the weekdays based on today's date automatically
+		today = datetime.date.today()
+		start = today + datetime.timedelta(-2 - today.weekday())
+		weekdays = []
+		for i in range(7):     #计算该周的所有日期
+			tmp_weekday = start + datetime.timedelta(days = i)
+			weekdays.append(tmp_weekday)
+			
+		form = WhiteboardForm(request.form)
+		if request.method == "POST" and form.validate():
+			name = form.name.data
+			day6_am = form.day6_am.data
+			day6_pm = form.day6_pm.data
+			day7_am = form.day7_am.data
+			day7_pm = form.day7_pm.data
+			day1_am = form.day1_am.data
+			day1_pm = form.day1_pm.data
+			day2_am = form.day2_am.data
+			day2_pm = form.day2_pm.data
+			day3_am = form.day3_am.data
+			day3_pm = form.day3_pm.data
+			day4_am = form.day4_am.data
+			day4_pm = form.day4_pm.data
+			day5_am = form.day5_am.data
+			day5_pm = form.day5_pm.data
+			
+			old_path = WEEKLY_PATH + 'weekly_' + str(start)
+			new_path = WEEKLY_PATH + 'tmp.log'			
+			data = name + ' ' + day6_am	 + ' ' + day6_pm  + ' ' + day7_am + ' ' + day7_pm  + ' ' \
+			+ day1_am + ' ' + day1_pm + ' ' + day2_am + ' ' + day2_pm + ' ' + day3_am + ' ' \
+			+ day3_pm + ' ' + day4_am + ' ' + day4_pm + ' ' + day5_am + ' ' + day5_pm
+			
+			with open(old_path, 'r') as f, open(new_path, 'w') as fout:
+				NAME_EXIST = 0
+				for line in f:
+					if line.startswith(name):
+						line = data + '\n'
+						NAME_EXIST = 1
+					fout.write(line)  
+				if NAME_EXIST == 1:
+					os.rename(new_path, old_path)
+					return redirect(url_for('wb_thisweek')) #return to wb_thisweek if NAME_EXIST = 1
+				else:
+					return redirect(url_for('wb_update'))	#return to wb_update if NAME_EXIST = 0
+		return render_template("wb-update.html", title=u'更新白板', form=form, weekdays=weekdays)
+		
+	except Exception as e:
+		return(str(e))		
+
+@app.route("/wb-add-member/", methods = ['GET','POST'])
+def wb_add_member():
+	try:
+		set_cn_encoding()	
+		
+		#取得weekly目录下的所有文件（列表）
+		files = os.listdir(WEEKLY_PATH)
+		#列表按文件名排序，让最新的weekly_xxxx-xx-xx成为列表第一个元素
+		files.sort(reverse = True)  
+		
+		
+		form = AddmemberForm(request.form)
+		path = WEEKLY_NAMELIST_PATH + 'namelist'
+		
+		if request.method == "POST" and form.validate():
+			name = form.name.data
+			data = name + ' - - - - - - - - - - - - - -'
+			#在namelist.log里添加该成员
+			with open(path, 'ab') as f:
+				f.write(data + '\n') 	
+			#在最新的weekly_xxxx-xx-xx里添加该成员	
+			with open(WEEKLY_PATH+files[0], 'ab') as f:
+				f.write(data + '\n') 				
+				
+			return redirect(url_for('wb_thisweek'))	 
+
+		return render_template("wb-add-member.html", title=u'增加成员', form=form)
+		
+	except Exception as e:
+		return(str(e))	
+
+@app.route("/wb-del-member/", methods = ['GET','POST'])
+def wb_del_member():
+	try:
+		set_cn_encoding()	
+		
+		#取得weekly目录下的所有文件（列表）
+		files = os.listdir(WEEKLY_PATH)
+		#列表按文件名排序，让最新的weekly_xxxx-xx-xx成为列表第一个元素
+		files.sort(reverse = True)  		
+		
+		form = DelmemberForm(request.form)
+		old_path_namelist = WEEKLY_NAMELIST_PATH + 'namelist'
+		new_path_namelist = WEEKLY_NAMELIST_PATH + 'tmpfile.log'
+		
+		old_path_weekly = WEEKLY_PATH + files[0]
+		new_path_weekly = WEEKLY_PATH + 'tmp.log'		
+		
+					
+		if request.method == "POST" and form.validate():
+			name = form.name.data
+			#删除namelist.log里的该成员
+			with open(old_path_namelist, 'r') as f, open(new_path_namelist, 'w') as fout:
+				for line in f:
+					name_str = line.split()[0]  #截取姓名
+					if not name == name_str:    #仅当姓名完全匹配时，执行以下步骤
+						fout.write(line)  
+			os.rename(new_path_namelist, old_path_namelist)  #新文件改名为旧文件（相当于覆盖旧文件）
+			#删除最新的weekly_xxxx-xx-xx里的该成员		
+			with open(old_path_weekly, 'r') as f, open(new_path_weekly, 'w') as fout:
+				for line in f:
+					name_str = line.split()[0]  #截取姓名
+					if not name == name_str:    #仅当姓名完全匹配时，执行以下步骤
+						fout.write(line)  
+			os.rename(new_path_weekly, old_path_weekly)		#新文件改名为旧文件（相当于覆盖旧文件）		
+				
+			return redirect(url_for('wb_thisweek'))	 
+
+		return render_template("wb-del-member.html", title=u'删除成员', form=form)
+		
+	except Exception as e:
+		return(str(e))	
+
+		
+@app.route("/wb-list/")
+def wb_list():
+
+	#Get number of weekly whiteboards
+	num_wb = (sysadm_badges_number())[3]
+
+	list = []
+	#取得weekly目录下的所有文件（列表）
+	files = os.listdir(WEEKLY_PATH)
+	#列表按文件名排序
+	files.sort(reverse = True)  
+	for weeklyfile in files:
+		list.append(weeklyfile)
+	return  render_template("wb-list.html", title=u'白板列表', num_wb=num_wb, list=list)		
+
+@app.route('/wb-review/<filename>/')
+@app.route("/wb-review/") 
+def wb_review(filename):
+	try:
+		set_cn_encoding()	
+		
+		fn = filename
+		#Get number of weekly whiteboards
+		num_wb = (sysadm_badges_number())[3]
+		
+		
+		list = []
+		#取得weekly目录下的所有文件（列表）
+		files = os.listdir(WEEKLY_PATH)
+		#列表按文件名排序,显示在页面左栏
+		files.sort(reverse = True)  
+		for weeklyfile in files:
+			list.append(weeklyfile)		
+		
+		#根据文件名（如：weekly_2017-03-21），截取得到该周起始日期（2017-03-21）
+		start = filename.split("_")[1]
+		start_day = datetime.datetime.strptime(start, '%Y-%m-%d')  #字符串转换为时间格式(2017-03-21 00:00:00)
+		weekdays = []
+		for i in range(7):     #计算该周的所有日期
+			tmp_weekday = start_day + datetime.timedelta(days = i)
+			tmp_weekday = (str(tmp_weekday)).split()[0]  #只截取日期（即只截取 2017-03-21 00:00:00 的部分)
+			weekdays.append(tmp_weekday)
+				
+		#fillin the weekly form based on the record automatically
+		path = WEEKLY_PATH + fn			
+		with open(path, 'r') as file:
+			name_lines = file.readlines()
+
+		filedata = []
+		num = len(name_lines)
+
+		for x in range(num):
+			filedata.append(name_lines[x].split(" "))		
+		
+		return render_template("wb-review.html", title=u'白板回顾', num=num, num_wb=num_wb, \
+		       list=list, fn=fn, weekdays=weekdays, filedata=filedata)
+		
+	except Exception as e:
+		return(str(e))
+
+	
 #get the location from user's ip
 def get_ip_info(ip):
 	
@@ -95,13 +364,19 @@ def sysadm_badges_number():
 		
 		#Get number of users and display it with "bootstrap badge"
 		c, conn = connection()
-		c.execute("SELECT * from users;")
+		c.execute("SELECT * from login_user;")
 		num_users = int(c.rowcount)
 		
 		#Get number of docs and display it with "bootstrap badge"
 		num_docs = sum([len(files) for root,dirs,files in os.walk(DOCS_PATH)])
 		
-		return(num_logs, num_users, num_docs)
+		#Get number of weekly whiteboards and display it with "bootstrap badge"
+		wblist = []
+		for weeklyfile in os.listdir(WEEKLY_PATH):
+			wblist.append(weeklyfile)
+		num_weeklys = len(wblist)
+		
+		return(num_logs, num_users, num_docs, num_weeklys)
 	except Exception as e:
 		return str(e)
 	
@@ -118,7 +393,7 @@ def write_log_info(info_type):
 
 		with open(path, 'ab') as file:
 			if 'logged_in' in session:
-				c.execute("select * from users where username = (%s)", [session['username']])
+				c.execute("select * from login_user where username = (%s)", [session['username']])
 				
 				ip_addr = request.remote_addr
 				ip_loc = get_ip_info(ip_addr)
@@ -152,20 +427,7 @@ def write_log_info(info_type):
 		return str(e)
 		
 
-#check if user has logged in
-def login_required(f):
-	@wraps(f)
-	def wrap(*args, **kwargs):
-		if 'logged_in' in session:
-			return f(*args, **kwargs)
-		else:
-			#record the url I want to access
-			# session["want_url"] = request.url
-			
-			flash(u'请您先登陆！')
-			return redirect(url_for('login_page'))			
-			
-	return wrap
+
 	
 	
 #only logged in user(s) can access the protected directory
@@ -202,7 +464,7 @@ def user_auth_edit(username):
 		
 			#Be carefule!! Must use [] to quote username , otherwise it will
 			#prompt a warning like: "not all arguments converted during string formatting"
-			c.execute("update users set auth_type='%s' where username='%s'" % (permit,username) )
+			c.execute("update login_user set auth_type='%s' where username='%s'" % (permit,username) )
 			conn.commit()
 			
 			c.close()
@@ -212,10 +474,10 @@ def user_auth_edit(username):
 			return  redirect(url_for('users_list'))
 		else:
 			c, conn = connection()
-			c.execute("select * from users where username = (%s)", [username])
+			c.execute("select * from login_user where username = (%s)", [username])
 			auth_type_db = c.fetchone()[5] 
 			
-			#Get number of logs/users/docs and display them with "bootstrap badge"
+			#Get number of logs/login_user/docs and display them with "bootstrap badge"
 			num_logs = (sysadm_badges_number())[0]
 			num_users = (sysadm_badges_number())[1]
 			num_docs = (sysadm_badges_number())[2]
@@ -238,8 +500,8 @@ def user_delete(username):
 
 		#Be carefule!! Must use [] to quote username , otherwise it will
 		#prompt a warning like: "not all arguments converted during string formatting"
-		# c.execute("delete from users where username='%s'" % (username) )
-		c.execute("delete from users where username= (%s)", [username] )
+		# c.execute("delete from login_user where username='%s'" % (username) )
+		c.execute("delete from login_user where username= (%s)", [username] )
 		conn.commit()
 		
 		c.close()
@@ -260,7 +522,7 @@ def users_list():
 		c, conn = connection()
 
 		#get all users
-		c.execute("select `username`, `auth_type`, `email`, `regdate`  from users")
+		c.execute("select `username`, `auth_type`, `email`, `regdate`  from login_user")
 		users_db = c.fetchall()
 		
 		#Get number of logs/users/docs and display them with "bootstrap badge"
@@ -352,8 +614,8 @@ def comments():
 		return  render_template("comments.html", title=u'留言板', error = error)
 	except Exception as e:
 		return str(e)
-	
 
+	
 @app.route("/privacy/")
 def privacy():
 	return  render_template("privacy.html", title=u'网站规定和隐私协议')
@@ -368,7 +630,7 @@ def role_error_page():
 		c, conn = connection()
 		#Be carefule!! Must use [] to quote session['username'] , otherwise it will
 		#prompt a warning like: "not all arguments converted during string formatting"
-		c.execute("select * from users where username = (%s)", [session['username']])
+		c.execute("select * from login_user where username = (%s)", [session['username']])
 		#get the auth_type of first record
 		auth_type_db = c.fetchone()[5] 
 
@@ -572,7 +834,7 @@ def doc_server_dashboard():
 	c, conn = connection()
 	#Be carefule!! Must use [] to quote session['username'] , otherwise it will
 	#prompt a warning like: "not all arguments converted during string formatting"
-	c.execute("select * from users where username = (%s)", [session['username']])
+	c.execute("select * from login_user where username = (%s)", [session['username']])
 	
 	#get the auth_type of first record
 	auth_type_db = c.fetchone()[5]
@@ -641,7 +903,7 @@ def doc_network_dashboard():
 	c, conn = connection()
 	#Be carefule!! Must use [] to quote session['username'] , otherwise it will
 	#prompt a warning like: "not all arguments converted during string formatting"
-	c.execute("select * from users where username = (%s)", [session['username']])
+	c.execute("select * from login_user where username = (%s)", [session['username']])
 	
 	#get the auth_type of first record
 	auth_type_db = c.fetchone()[5]
@@ -672,7 +934,7 @@ def doc_inventory_dashboard():
 	c, conn = connection()
 	#Be carefule!! Must use [] to quote session['username'] , otherwise it will
 	#prompt a warning like: "not all arguments converted during string formatting"
-	c.execute("select * from users where username = (%s)", [session['username']])
+	c.execute("select * from login_user where username = (%s)", [session['username']])
 	
 	#get the auth_type of first record
 	auth_type_db = c.fetchone()[5]
@@ -722,12 +984,12 @@ def login_page():
 		if request.method == "POST":
 			#Be carefule!! Must use [] to quote thwart(request.form['username']), otherwise it will
 			#prompt a warning like: "not all arguments converted during string formatting"
-			c.execute("select * from users where username = (%s)", [thwart(request.form['username'])])
+			c.execute("select * from login_user where username = (%s)", [thwart(request.form['username'])])
 			#get the password of first record
 			pwd_in_db = c.fetchone()[2]
 			
 			#get the auth_type_db of logged in user
-			c.execute("select * from users where username = (%s)", [thwart(request.form['username'])])
+			c.execute("select * from login_user where username = (%s)", [thwart(request.form['username'])])
 			auth_type_db = c.fetchone()[5]
 			
 			#check if password matches
@@ -758,13 +1020,12 @@ def login_page():
 
 
 class RegistrationForm(Form):
-	username = TextField(u'用户名', [validators.Length(min=4, max=20)])
+	username = TextField(u'用户名', [validators.Length(min=2, max=20)])
 	email = TextField(u'邮箱', [validators.Length(min=8, max=50)])
 	password = PasswordField(u'密码', [validators.Required(),validators.Length(min=6, max=30),
 				validators.EqualTo('confirm', message=u'密码不匹配')])	
 	confirm = PasswordField(u'重输一遍密码')
 	accept_tos = BooleanField(u'我接受<a href="/privacy/">网站规定和隐私协议</a> (最后更新：2016年7月)', [validators.Required()])
-	
 	
 @app.route("/register/", methods = ['GET','POST'])
 def register_page():
@@ -778,7 +1039,7 @@ def register_page():
 			email = form.email.data
 			c, conn = connection()
 
-			x = c.execute("select * from users where username = (%s)", [thwart(username)])
+			x = c.execute("select * from login_user where username = (%s)", [thwart(username)])
 			if int(x) > 0:
 				flash(u'用户名已被使用，请尝试其他用户名!')
 				return render_template('register.html', title=u'注册', form=form)
@@ -786,7 +1047,7 @@ def register_page():
 				#get the date of registeration, use China time
 				datenow = datetime.datetime.utcnow()
 				
-				c.execute("insert into users (username, password, email, regdate) values (%s,%s,%s,%s)", (thwart(username), thwart(password), thwart(email), datenow))
+				c.execute("insert into login_user (username, password, email, regdate) values (%s,%s,%s,%s)", (thwart(username), thwart(password), thwart(email), datenow))
 				conn.commit()
 				
 				flash(u'感谢您的注册！您已登陆系统！')

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>	
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">   	
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">  
 	
 	{% if title %}
@@ -54,8 +54,9 @@
 				<li><a href="/">首页 <span class="sr-only">(current)</span></a></li>
 				<li><a href="/about-team/">团队介绍</a></li>
 				<li><a href="/comments/">留言板</a></li>
+				<li><a href="/wb-thisweek/">白板</a></li>
 				<li class="dropdown">
-				  <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" data-delay="50" data-close-others="false">文档库 <span class="caret"></span></a>
+				  <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" data-delay="5" data-close-others="false">文档库 <span class="caret"></span></a>
 				  <ul class="dropdown-menu">
 					<li><a href="/doc-server-dashboard/"><span class="glyphicon glyphicon-object-align-bottom"></span> 服务器</a></li>
 					<li><a href="/doc-network-dashboard/"><span class="glyphicon glyphicon-stats"></span> 网络</a></li>
@@ -88,7 +89,7 @@
 			  <ul class="nav navbar-nav navbar-right">
 				{% if session.logged_in %}
 					<li class="dropdown">
-					  <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" data-delay="50" data-close-others="false"><span class="glyphicon glyphicon-user"></span>    {{session.username}} <span class="caret"></span></a>
+					  <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" data-delay="5" data-close-others="false"><span class="glyphicon glyphicon-user"></span>    {{session.username}} <span class="caret"></span></a>
 					  <ul class="dropdown-menu">
 						<li><a href="#"><span class="glyphicon glyphicon-info-sign"></span> 用户信息</a></li>
 						<li><a href="#"><span class="glyphicon glyphicon-lock"></span> 修改密码</a></li>
