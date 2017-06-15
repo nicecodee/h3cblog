@@ -63,7 +63,7 @@ class WhiteboardForm(Form):
 	day5_pm = TextField(u'周五下午' )
 
 class AddmemberForm(Form):
-	name = TextField(u'添加姓名', [validators.Required()])
+	name = TextField(u'添加姓名(至最后一行)', [validators.Required()])
 	
 class DelmemberForm(Form):
 	name = TextField(u'删除姓名', [validators.Required()])
