@@ -183,33 +183,40 @@ def wb_update(name):
 		#update personal whiteboard	
 		form = WhiteboardForm(request.form)
 		if request.method == "POST":
-			day6_am = request.form['day6_am']
-			day6_pm = request.form['day6_pm']
-			day7_am = request.form['day7_am']
-			day7_pm = request.form['day7_pm']
-			day1_am = request.form['day1_am']
-			day1_pm = request.form['day1_pm']
-			day2_am = request.form['day2_am']
-			day2_pm = request.form['day2_pm']
-			day3_am = request.form['day3_am']
-			day3_pm = request.form['day3_pm']
-			day4_am = request.form['day4_am']
-			day4_pm = request.form['day4_pm']
-			day5_am = request.form['day5_am']
-			day5_pm = request.form['day5_pm']
+			halfday = range(14)		#用列表存储用户填入的数据		
+			halfday[0] = request.form['halfday0']
+			halfday[1] = request.form['halfday1']
+			halfday[2] = request.form['halfday2']
+			halfday[3] = request.form['halfday3']
+			halfday[4] = request.form['halfday4']
+			halfday[5] = request.form['halfday5']
+			halfday[6] = request.form['halfday6']
+			halfday[7] = request.form['halfday7']
+			halfday[8] = request.form['halfday8']
+			halfday[9] = request.form['halfday9']
+			halfday[10] = request.form['halfday10']
+			halfday[11] = request.form['halfday11']
+			halfday[12] = request.form['halfday12']
+			halfday[13] = request.form['halfday13']
 			
 			old_path = WEEKLY_PATH + 'weekly_' + str(start)
-			new_path = WEEKLY_PATH + 'tmp.log'			
-			data = name + ' ' + day6_am	 + ' ' + day6_pm  + ' ' + day7_am + ' ' + day7_pm  + ' ' \
-			+ day1_am + ' ' + day1_pm + ' ' + day2_am + ' ' + day2_pm + ' ' + day3_am + ' ' \
-			+ day3_pm + ' ' + day4_am + ' ' + day4_pm + ' ' + day5_am + ' ' + day5_pm
+			new_path = WEEKLY_PATH + 'tmp.log'		
 			
+			#把空白内容转换为“- ”，非空白内容后面添加一个空格
+			for i in range(14):
+				if not halfday[i]:
+					halfday[i] = "- "
+				else:
+					halfday[i] = halfday[i] + " "	
+			#列表转换为字符串
+			halfday="".join(halfday)
+			#旧文件换行复制到新文件，遇到需更新的名字时，替换那一行，再写到新文件
 			with open(old_path, 'r') as f, open(new_path, 'w') as fout:
 				for line in f:
 					if line.startswith(name):  #找到匹配的名字，用填在表格的data替换这一行
-						line = data + '\n'
+						line = name + " " + halfday + '\n'
 					fout.write(line)  
-				os.rename(new_path, old_path)
+				os.rename(new_path, old_path)  #新文件改回为原文件的名字
 			return redirect(url_for('wb_update', name=name))	 
 		return render_template("wb-update.html", title=u'更新白板', form=form, weekdays=weekdays, filedata=filedata)
 		
